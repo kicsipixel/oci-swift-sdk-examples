@@ -23,6 +23,10 @@ struct Mainscreen: View {
                 .padding()
                
             VStack(alignment: .center) {
+                Image("folder")
+                    .resizable()
+                    .frame(width: 60, height: 60)
+                    .padding(.bottom, 2)
                 Text(compartmentId.isEmpty ? "You need to set your compartmentId first." : "Drop your file here to upload.")
                     .bold()
                     .foregroundStyle(.accent)
