@@ -1,2 +1,40 @@
 # oci-swift-sdk-examples
-Example projects using oci-swift-sdk
+
+A collection of example projects demonstrating how to use the [oci-swift-sdk](https://github.com/iliasaz/oci-swift-sdk) to interact with Oracle Cloud Infrastructure services in Swift-based applications.
+
+---
+
+## 📦 Included Examples
+
+### FileLift
+
+**FileLift** is a lightweight macOS client for uploading files to [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/europe/cloud/) Object Storage. Designed with simplicity and elegance in mind, it provides a drag-and-drop interface for seamless file transfers.
+
+Key features:
+- Retrieves Object Storage namespace
+- Lists buckets in a specified compartment
+- Uploads files to selected buckets
+
+[View FileLift →](https://github.com/kicsipixel/oci-swift-sdk-examples/tree/main/FileLift)
+
+---
+
+## 🚀 Getting Started
+
+Each example is self-contained and includes setup instructions in its README. To run them, make sure you have:
+- A valid OCI configuration file (`~/.oci/config`)
+- Swift 5.9+ and Xcode 15 or later
+- The oci-swift-sdk integrated via Swift Package Manager
+
+---
+
+## 🧪 Contributing
+
+Feel free to submit your own examples or improvements via pull request. Whether it's a CLI tool, iOS or macOS app or server-side Swift integration — all use cases are welcome.
+
+---
+
+## 📄 License
+
+This repository is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
