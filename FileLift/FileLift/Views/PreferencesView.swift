@@ -12,6 +12,7 @@ import SwiftUI
 struct PreferencesView: View {
   @AppStorage("autoUpload") private var autoUpload = false
   @AppStorage("compartmentId") private var compartmentId: String = ""
+    @AppStorage("parBucketLink") private var parBucketLink: String = ""
   @Environment(DataViewModel.self) private var vm
   @AppStorage("selection") private var selection = ""
 
@@ -32,12 +33,29 @@ struct PreferencesView: View {
 
         Section {
           TextField("CompartmentId:", text: $compartmentId)
+
           Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
+
           Picker("Select a bucket:", selection: $selection) {
             ForEach(vm.buckets, id: \.name) { bucket in
               Text(bucket.name)
             }
           }
+            
+          HStack {
+              Rectangle()
+              .fill(Color.accent)
+                  .frame(width: 140, height: 1)
+              
+            Text("OR")
+                  .foregroundStyle(.accent)
+
+              Rectangle()
+              .fill(Color.accent)
+                  .frame(width: 140, height: 1)
+          }
+            
+            TextField("PAR bucket:", text: $parBucketLink)
         } header: {
           Text("OCI Settings")
         }
