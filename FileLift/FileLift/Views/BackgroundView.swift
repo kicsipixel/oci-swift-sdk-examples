@@ -16,12 +16,12 @@ struct BackgroundView: View {
   @ViewBuilder
   var content: some View {
     RoundedRectangle(cornerRadius: 16)
-      .fill(Color.blue.opacity(0.1))
+      .fill(Color.accent.opacity(0.1))
       .frame(width: 340, height: 200)
       .overlay(
         RoundedRectangle(cornerRadius: 16)
           .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
-          .foregroundColor(.blue)
+          .foregroundColor(.accent)
       )
   }
 }

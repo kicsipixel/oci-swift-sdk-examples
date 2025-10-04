@@ -11,37 +11,37 @@ import SwiftUI
 
 @Observable @MainActor
 final class DataViewModel {
-    // Private properties
-    // Properties
-    let client: ObjectStorageClient
-    var namespace: String?
+  // Private properties
+  // Properties
+  let client: ObjectStorageClient
+  var namespace: String?
 
-    init() throws {
-        let env = ProcessInfo.processInfo.environment
-        let ociConfigFilePath =
-            env["OCI_CONFIG_FILE"] ?? "\(NSHomeDirectory())/.oci/config"
-        let ociProfileName = env["OCI_PROFILE"] ?? "DEFAULT"
-        let regionId = try extractUserRegion(
-            from: ociConfigFilePath,
-            profile: ociProfileName
-        )
-        let region = Region.from(regionId: regionId ?? "") ?? .iad
-        let signer = try APIKeySigner(
-            configFilePath: ociConfigFilePath,
-            configName: ociProfileName
-        )
-        client = try ObjectStorageClient(region: region, signer: signer)
-    }
+  init() throws {
+    let env = ProcessInfo.processInfo.environment
+    let ociConfigFilePath =
+      env["OCI_CONFIG_FILE"] ?? "\(NSHomeDirectory())/.oci/config"
+    let ociProfileName = env["OCI_PROFILE"] ?? "DEFAULT"
+    let regionId = try extractUserRegion(
+      from: ociConfigFilePath,
+      profile: ociProfileName
+    )
+    let region = Region.from(regionId: regionId ?? "") ?? .iad
+    let signer = try APIKeySigner(
+      configFilePath: ociConfigFilePath,
+      configName: ociProfileName
+    )
+    client = try ObjectStorageClient(region: region, signer: signer)
+  }
 
-    // A non-throwing mock initializer or static property for preview purposes.
-    static var preview: DataViewModel {
-        let mock = try! DataViewModel()
-        // optionally stub any values here
-        return mock
-    }
+  // A non-throwing mock initializer or static property for preview purposes.
+  static var preview: DataViewModel {
+    let mock = try! DataViewModel()
+    // optionally stub any values here
+    return mock
+  }
 
-    // MARK: - Gets namespace of the user's object storage
-    func getNamespace() async throws {
-        namespace = try await client.getNamespace()
-    }
+  // MARK: - Gets namespace of the user's object storage
+  func getNamespace() async throws {
+    namespace = try await client.getNamespace()
+  }
 }

@@ -12,8 +12,8 @@ import SwiftUI
 struct Mainscreen: View {
     // Private properties
     @Environment(DataViewModel.self) private var vm
-    @State private var selection: String? = nil
-    @State var isOn = false
+  
+    @AppStorage("compartmentId") private var compartmentId: String = ""
 
     var body: some View {
         ZStack {
@@ -21,8 +21,10 @@ struct Mainscreen: View {
                 .ignoresSafeArea()
             DropzoneView()
                
-            VStack {
-                Text("Drop your file to start uploading.")
+            VStack(alignment: .center) {
+                Text(compartmentId.isEmpty ? "You need to set your compartmentId first." : "Drop your file here to upload.")
+                    .bold()
+                    .foregroundStyle(.accent)
             }
         }
     }
