@@ -20,6 +20,7 @@ struct Mainscreen: View {
             Color.white
                 .ignoresSafeArea()
             DropzoneView()
+                .padding()
                
             VStack(alignment: .center) {
                 Text(compartmentId.isEmpty ? "You need to set your compartmentId first." : "Drop your file here to upload.")
@@ -30,6 +31,7 @@ struct Mainscreen: View {
     }
 }
 
+// MARK: - Preview
 #Preview {
     Mainscreen()
         .environment(DataViewModel.preview)

@@ -9,21 +9,19 @@
 import SwiftUI
 
 struct BackgroundView: View {
-  var body: some View {
-    content
-  }
+    var width: CGFloat = 340
+    var height: CGFloat = 200
 
-  @ViewBuilder
-  var content: some View {
-    RoundedRectangle(cornerRadius: 16)
-      .fill(Color.accent.opacity(0.1))
-      .frame(width: 340, height: 200)
-      .overlay(
+    var body: some View {
         RoundedRectangle(cornerRadius: 16)
-          .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
-          .foregroundColor(.accent)
-      )
-  }
+            .fill(Color.accent.opacity(0.1))
+            .frame(width: width, height: height)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
+                    .foregroundColor(.accent)
+            )
+    }
 }
 
 // MARK: - Preview

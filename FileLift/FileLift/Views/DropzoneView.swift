@@ -10,14 +10,20 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct DropzoneView: View {
+
+  @State private var isDropActive = false
+  @State private var dropzoneWidth: CGFloat = 340
+  @State private var dropzoneHeight: CGFloat = 200
+
   var body: some View {
     content
   }
 
   @ViewBuilder
   var content: some View {
-    BackgroundView()
-      .onDrop(of: [.fileURL], isTargeted: nil) { providers, _ in
+    BackgroundView(width: dropzoneWidth, height: dropzoneHeight)
+      .animation(.easeInOut(duration: 0.2), value: dropzoneHeight)
+      .onDrop(of: [.fileURL], isTargeted: $isDropActive) { providers, _ in
         for provider in providers {
           _ = provider.loadDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier) { data, _ in
             guard let data, let url = URL(dataRepresentation: data, relativeTo: nil), url.isFileURL
@@ -26,7 +32,7 @@ struct DropzoneView: View {
             var isDirectory: ObjCBool = false
             FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
             // Handle error message if folder is dropped
-              guard !isDirectory.boolValue else {
+            guard !isDirectory.boolValue else {
               print("Folders are not allowed: \(url.lastPathComponent)")
               return
             }
@@ -35,6 +41,11 @@ struct DropzoneView: View {
           }
         }
         return true
+      }
+      .onChange(of: isDropActive) { _, newValue in
+        let scale: CGFloat = 1.1
+        dropzoneHeight = newValue ? 200 * scale : 200
+        dropzoneWidth = newValue ? 340 * scale : 340
       }
   }
 }
