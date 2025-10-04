@@ -22,18 +22,19 @@ struct FileLiftApp: App {
   }
 
   var body: some Scene {
-      // Mainscreen
+    // Mainscreen
     WindowGroup {
       Mainscreen()
         .environment(dataViewModel)
     }
     .defaultPosition(.center)
     .windowResizability(.contentSize)
-      
-      // Preferences 
-      Settings {
-              PreferencesView()
-                  .frame(width: 400, height: 300)
-          }
+
+    // Preferences
+    Settings {
+      PreferencesView()
+        .environment(dataViewModel)
+        .frame(width: 400, height: 330)
+    }
   }
 }

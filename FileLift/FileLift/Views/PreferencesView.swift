@@ -11,6 +11,7 @@ import SwiftUI
 struct PreferencesView: View {
   @AppStorage("autoUpload") private var autoUpload = false
   @AppStorage("compartmentId") private var compartmentId: String = ""
+  @Environment(DataViewModel.self) private var vm
 
   var body: some View {
     content
@@ -29,6 +30,7 @@ struct PreferencesView: View {
 
         Section {
           TextField("CompartmentId:", text: $compartmentId)
+            Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
         } header: {
           Text("OCI Settings")
         }
@@ -47,4 +49,5 @@ struct PreferencesView: View {
 // MARK: - Preview
 #Preview {
   PreferencesView()
+    .environment(DataViewModel.preview)
 }

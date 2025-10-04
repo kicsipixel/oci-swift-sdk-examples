@@ -27,6 +27,13 @@ struct Mainscreen: View {
                     .bold()
                     .foregroundStyle(.accent)
             }
+            .task {
+                do {
+                    try await vm.getNamespace()
+                } catch {
+                    print("Cannot get namespace automatically.")
+                }
+            }
         }
     }
 }

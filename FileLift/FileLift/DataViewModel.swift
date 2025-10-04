@@ -14,7 +14,7 @@ final class DataViewModel {
   // Private properties
   // Properties
   let client: ObjectStorageClient
-  var namespace: String?
+  var namespace: String = ""
 
   init() throws {
     let env = ProcessInfo.processInfo.environment
