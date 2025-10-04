@@ -47,14 +47,23 @@ final class DataViewModel {
   }
 
   // MARK: - Lists buckets in the user given compartment
+  // TODO: Error handling is missing.
   func listBuckets() async throws {
     var compartmentId: String {
       UserDefaults.standard.string(forKey: "compartmentId") ?? ""
     }
-    buckets = try await client.listBuckets(namespaceName: namespace.replacingOccurrences(of: "\"", with: ""), compartmentId: compartmentId)
+    buckets =
+      try await client
+      .listBuckets(
+        namespaceName:
+          namespace
+          .replacingOccurrences(of: "\"", with: ""),
+        compartmentId: compartmentId
+      )
   }
 
   // MARK: - Pusts object/file into the bucket
+  // TODO: Possible errors are not handled at all.
   func putObject(filePath: String) async throws {
     let url = URL(fileURLWithPath: filePath)
     let fileData = try Data(contentsOf: url)
