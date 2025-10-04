@@ -10,7 +10,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct DropzoneView: View {
-
+    @Environment(DataViewModel.self) private var vm
   @State private var isDropActive = false
   @State private var dropzoneWidth: CGFloat = 340
   @State private var dropzoneHeight: CGFloat = 200
@@ -36,7 +36,9 @@ struct DropzoneView: View {
               print("Folders are not allowed: \(url.lastPathComponent)")
               return
             }
-
+              Task {
+                  try await vm.putObject(filePath: url.path)
+              }
             print("Dropped file name: \(url.lastPathComponent)")
           }
         }
@@ -53,4 +55,5 @@ struct DropzoneView: View {
 // MARK: - Preview
 #Preview {
   DropzoneView()
+        .environment(DataViewModel.preview)
 }

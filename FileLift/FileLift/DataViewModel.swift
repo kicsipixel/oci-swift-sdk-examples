@@ -53,4 +53,16 @@ final class DataViewModel {
     }
     buckets = try await client.listBuckets(namespaceName: namespace.replacingOccurrences(of: "\"", with: ""), compartmentId: compartmentId)
   }
+
+  // MARK: - Pusts object/file into the bucket
+  func putObject(filePath: String) async throws {
+    let url = URL(fileURLWithPath: filePath)
+    let fileData = try Data(contentsOf: url)
+    try await client.putObject(
+      namespaceName: namespace.replacingOccurrences(of: "\"", with: ""),
+      bucketName: UserDefaults.standard.string(forKey: "selection")!,
+      objectName: "\(url.lastPathComponent)",
+      putObjectBody: fileData
+    )
+  }
 }
