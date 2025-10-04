@@ -6,12 +6,14 @@
 //  Copyright © 2025 Szabolcs Tóth. All rights reserved.
 //
 
+import OCIKit
 import SwiftUI
 
 struct PreferencesView: View {
   @AppStorage("autoUpload") private var autoUpload = false
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @Environment(DataViewModel.self) private var vm
+  @AppStorage("selection") private var selection = ""
 
   var body: some View {
     content
@@ -30,7 +32,12 @@ struct PreferencesView: View {
 
         Section {
           TextField("CompartmentId:", text: $compartmentId)
-            Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
+          Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
+          Picker("Select a bucket:", selection: $selection) {
+            ForEach(vm.buckets, id: \.name) { bucket in
+              Text(bucket.name)
+            }
+          }
         } header: {
           Text("OCI Settings")
         }
@@ -41,6 +48,12 @@ struct PreferencesView: View {
           Text("Application")
         }
       }.formStyle(.grouped)
+        .task {
+          do {
+            try await vm.listBuckets()
+          }
+          catch {}
+        }
     }
     .padding(.horizontal, 10)
   }

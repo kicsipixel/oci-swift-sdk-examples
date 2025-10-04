@@ -15,6 +15,7 @@ final class DataViewModel {
   // Properties
   let client: ObjectStorageClient
   var namespace: String = ""
+  var buckets = [BucketSummary]()
 
   init() throws {
     let env = ProcessInfo.processInfo.environment
@@ -43,5 +44,13 @@ final class DataViewModel {
   // MARK: - Gets namespace of the user's object storage
   func getNamespace() async throws {
     namespace = try await client.getNamespace()
+  }
+
+  // MARK: - Lists buckets in the user given compartment
+  func listBuckets() async throws {
+    var compartmentId: String {
+      UserDefaults.standard.string(forKey: "compartmentId") ?? ""
+    }
+    buckets = try await client.listBuckets(namespaceName: namespace.replacingOccurrences(of: "\"", with: ""), compartmentId: compartmentId)
   }
 }
