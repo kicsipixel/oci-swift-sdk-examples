@@ -1,0 +1,51 @@
+{
+  "originHash" : "bffcd3b5b554f0054cd75eb0dcc56d536106da00ad5c3e83a0d465ddccdfe7e5",
+  "pins" : [
+    {
+      "identity" : "oci-swift-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/iliasaz/oci-swift-sdk",
+      "state" : {
+        "branch" : "main",
+        "revision" : "0397b7a5edc64bd0dd9087a21b3a4f923d86a549"
+      }
+    },
+    {
+      "identity" : "perfect-iniparser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/PerfectlySoft/Perfect-INIParser.git",
+      "state" : {
+        "revision" : "0952aac9ca54324ff25191569fd9c48eec424772",
+        "version" : "3.0.2"
+      }
+    },
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "f70225981241859eb4aa1a18a75531d26637c8cc",
+        "version" : "1.4.0"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto.git",
+      "state" : {
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
+      }
+    },
+    {
+      "identity" : "swift-log",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-log.git",
+      "state" : {
+        "revision" : "ce592ae52f982c847a4efc0dd881cc9eb32d29f2",
+        "version" : "1.6.4"
+      }
+    }
+  ],
+  "version" : 3
+}
