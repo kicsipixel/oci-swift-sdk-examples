@@ -1,5 +1,5 @@
 //
-//  BucketViewApp.swift
+//  Mainscreen.swift
 //  BucketView
 //
 //  Created by Szabolcs Tóth on 05.10.2025.
@@ -25,15 +25,43 @@
 
 import SwiftUI
 
-@main
-struct BucketViewApp: App {
-  var body: some Scene {
-    WindowGroup {
-      Mainscreen()
-    }
-    .windowStyle(.hiddenTitleBar)
-    .defaultSize(width: 640, height: 480)
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
+struct Mainscreen: View {
+  // Private properties
+  @State private var showInspector: Bool = false
+    @State private var selection: String = ""
+
+  var body: some View {
+    content
+      .frame(width: 440, height: 480)
+      .inspector(isPresented: $showInspector) {
+        InspectorView()
+      }
+      .toolbar {
+        Text("BucketView")
+          .bold()
+          .font(.title3)
+
+        Button(action: { showInspector.toggle() }) {
+          Label("Toggle Inspector", systemImage: "sidebar.right")
+        }
+      }
   }
+
+  @ViewBuilder
+  var content: some View {
+      VStack {
+          Picker("Select bucket", selection: $selection) {
+              Text("1")
+              Text("2")
+          }
+          Text("Hello, World!")
+          
+          Spacer()
+      }
+      .padding(.horizontal, 30)
+  }
+}
+
+#Preview {
+  Mainscreen()
 }

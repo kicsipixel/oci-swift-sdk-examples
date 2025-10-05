@@ -1,5 +1,5 @@
 //
-//  BucketViewApp.swift
+//  InspectorView.swift
 //  BucketView
 //
 //  Created by Szabolcs Tóth on 05.10.2025.
@@ -25,15 +25,18 @@
 
 import SwiftUI
 
-@main
-struct BucketViewApp: App {
-  var body: some Scene {
-    WindowGroup {
-      Mainscreen()
-    }
-    .windowStyle(.hiddenTitleBar)
-    .defaultSize(width: 640, height: 480)
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
+struct InspectorView: View {
+  var body: some View {
+    content
+          .frame(width: 200, height: 480)
   }
+    
+    @ViewBuilder
+    var content: some View {
+        Text("Hello, World!")
+    }
+}
+
+#Preview {
+  InspectorView()
 }
