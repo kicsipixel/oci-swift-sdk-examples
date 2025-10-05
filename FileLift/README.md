@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./img/icon.png" alt="FileLift UI" width="25%">
+  <img src="./img/icon.svg" alt="FileLift UI" width="25%">
 </p>
 
 # FileLift
