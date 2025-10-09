@@ -36,6 +36,25 @@ struct Mainscreen: View {
   @State private var errorMessage: String = ""
 
   var body: some View {
+    content
+      .task {
+        do {
+          try await vm.getNamespace()
+        }
+        catch {
+          errorMessage = error.localizedDescription
+          showingAlert = true
+        }
+      }
+      .alert("Error happened", isPresented: $showingAlert) {
+        Button("Got it!", role: .cancel) {}
+      } message: {
+        Text(errorMessage)
+      }
+  }
+
+  @ViewBuilder
+  var content: some View {
     ZStack {
       Color.white
         .ignoresSafeArea()
@@ -57,20 +76,6 @@ struct Mainscreen: View {
         .bold()
         .foregroundStyle(.accent)
       }
-    }
-    .task {
-      do {
-        try await vm.getNamespace()
-      }
-      catch {
-        errorMessage = error.localizedDescription
-        showingAlert = true
-      }
-    }
-    .alert("Error happened", isPresented: $showingAlert) {
-      Button("Got it!", role: .cancel) {}
-    } message: {
-      Text(errorMessage)
     }
   }
 }
