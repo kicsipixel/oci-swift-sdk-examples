@@ -46,11 +46,14 @@ struct Mainscreen: View {
           showingAlert = true
         }
       }
+      // Error
       .alert("Error happened", isPresented: $showingAlert) {
         Button("Got it!", role: .cancel) {}
       } message: {
         Text(errorMessage)
       }
+      // Confirmation
+
   }
 
   @ViewBuilder

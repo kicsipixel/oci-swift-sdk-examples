@@ -29,7 +29,7 @@ import OCIKit
 import SwiftUI
 
 struct PreferencesView: View {
-  @AppStorage("autoUpload") private var autoUpload = false
+  @AppStorage("autoUpload") private var autoUpload = true
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
   @Environment(DataViewModel.self) private var vm
@@ -46,9 +46,8 @@ struct PreferencesView: View {
         // Autoupload - no need confirmation for uploading
         Section {
           Toggle("Enable Auto Upload", isOn: $autoUpload)
-            .disabled(true)
         } header: {
-          Text("Upload (Disabled)")
+          Text("Upload")
         }
 
         // OCI Setttings for `namespace`, `compartmentId` and `bucket`

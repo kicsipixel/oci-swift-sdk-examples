@@ -85,6 +85,8 @@ final class DataViewModel {
   // MARK: - Pusts object/file into the bucket
   // TODO: Possible errors are not handled at all. Force unwrapping.
   func putObject(filePath: String) async throws {
+    let confirmationIsNeeded = !UserDefaults.standard.bool(forKey: "autoUpload")
+
     isUploading = true
     defer { isUploading = false }
 
