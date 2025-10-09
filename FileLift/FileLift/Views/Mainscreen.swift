@@ -76,6 +76,30 @@ struct Mainscreen: View {
         .bold()
         .foregroundStyle(.accent)
       }
+
+      ProgressView(label: {
+        Text("Uploading file...")
+      })
+      .padding(20)
+      .background(.white.opacity(0.93))
+      .clipShape(RoundedRectangle(cornerRadius: 10))
+      .opacity(vm.isUploading ? 1 : 0)
+
+      if let message = vm.uploadSuccessMessage {
+        VStack {
+          Image(systemName: "square.and.arrow.up.badge.checkmark")
+            .font(.system(size: 32))
+            .padding(.bottom, 10)
+          Text("\(message)")
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 280)
+            .multilineTextAlignment(.center)
+        }
+        .padding(10)
+        .background(.white.opacity(0.93))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+      }
     }
   }
 }

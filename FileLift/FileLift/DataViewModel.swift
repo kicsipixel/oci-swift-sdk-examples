@@ -34,6 +34,8 @@ final class DataViewModel {
   let client: ObjectStorageClient
   var namespace: String = ""
   var buckets = [BucketSummary]()
+  var isUploading = false
+  var uploadSuccessMessage: String? = nil
 
   // MARK: - Initializer
   init() throws {
@@ -83,6 +85,9 @@ final class DataViewModel {
   // MARK: - Pusts object/file into the bucket
   // TODO: Possible errors are not handled at all. Force unwrapping.
   func putObject(filePath: String) async throws {
+    isUploading = true
+    defer { isUploading = false }
+
     let url = URL(fileURLWithPath: filePath)
     let fileData = try Data(contentsOf: url)
     try await client.putObject(
@@ -91,5 +96,15 @@ final class DataViewModel {
       objectName: "\(url.lastPathComponent)",
       putObjectBody: fileData
     )
+
+    self.showUploadSuccessMessage("Uploaded \(url.lastPathComponent) successfully")
+  }
+
+  // MARK: - Set and reset `uploadSuccessMessage`
+  func showUploadSuccessMessage(_ text: String) {
+    uploadSuccessMessage = text
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+      self.uploadSuccessMessage = nil
+    }
   }
 }
