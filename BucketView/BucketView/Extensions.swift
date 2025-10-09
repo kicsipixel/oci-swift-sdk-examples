@@ -1,9 +1,11 @@
 //
-//  BucketViewApp.swift
+//  Extensions.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 05.10.2025.
-//  Copyright © 2025 Szabolcs Tóth
+//  Created by Szabolcs Tóth on 03.10.2025.
+//
+//  This file is part of FileLift and is licensed under the MIT License.
+//  Copyright © 2025 Szabolcs Tóth.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +25,21 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import SwiftUI
+import Foundation
 
-@main
-struct BucketViewApp: App {
-  let dataViewModel: DataViewModel
-
-  init() {
-    do {
-      dataViewModel = try DataViewModel()
-    }
-    catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
-    }
+extension Bundle {
+  /// The app’s version number (CFBundleShortVersionString).
+  var appVersion: String {
+    infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
   }
 
-  var body: some Scene {
-    WindowGroup {
-      Mainscreen()
-            .environment(dataViewModel)
-//        Main()
-    }
-    .windowStyle(.hiddenTitleBar)
-    .defaultSize(width: 640, height: 480)
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
+  /// The app’s build number (CFBundleVersion).
+  var buildNumber: String {
+    infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+  }
 
-    // Preferences
-    Settings {
-      PreferencesView()
-        .environment(dataViewModel)
-        .frame(width: 400, height: 260)
-    }
+  /// Combined version string, e.g. "1.2.3 (45)"
+  var formattedVersion: String {
+    "v\(appVersion) \(buildNumber)"
   }
 }

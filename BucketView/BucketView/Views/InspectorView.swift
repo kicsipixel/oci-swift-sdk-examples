@@ -1,5 +1,5 @@
 //
-//  BucketViewApp.swift
+//  InspectorView.swift
 //  BucketView
 //
 //  Created by Szabolcs Tóth on 05.10.2025.
@@ -25,35 +25,28 @@
 
 import SwiftUI
 
-@main
-struct BucketViewApp: App {
-  let dataViewModel: DataViewModel
+struct InspectorView: View {
+  var node: ObjectNode?
 
-  init() {
-    do {
-      dataViewModel = try DataViewModel()
+  var body: some View {
+    VStack(alignment: .leading) {
+      if let node {
+        VStack {
+          Text("Name: \(node.name)")
+          Text("Size: \(node.size ?? "-")")
+          Text("Created: \(node.createdAt ?? "-")")
+
+        }
+      }
+      else {
+        Text("No selection")
+          .foregroundColor(.secondary)
+      }
     }
-    catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
-    }
+    .padding()
   }
+}
 
-  var body: some Scene {
-    WindowGroup {
-      Mainscreen()
-            .environment(dataViewModel)
-//        Main()
-    }
-    .windowStyle(.hiddenTitleBar)
-    .defaultSize(width: 640, height: 480)
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
-
-    // Preferences
-    Settings {
-      PreferencesView()
-        .environment(dataViewModel)
-        .frame(width: 400, height: 260)
-    }
-  }
+#Preview {
+  InspectorView()
 }

@@ -1,9 +1,11 @@
 //
-//  InspectorView.swift
+//  PreferencesView.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 05.10.2025.
-//  Copyright © 2025 Szabolcs Tóth
+//  Created by Szabolcs Tóth on 03.10.2025.
+//
+//  This file is part of FileLift and is licensed under the MIT License.
+//  Copyright © 2025 Szabolcs Tóth.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -23,20 +25,45 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import OCIKit
 import SwiftUI
 
-struct InspectorView: View {
+struct PreferencesView: View {
+  @AppStorage("autoUpload") private var autoUpload = false
+  @AppStorage("compartmentId") private var compartmentId: String = ""
+  @AppStorage("parBucketLink") private var parBucketLink: String = ""
+  @Environment(DataViewModel.self) private var vm
+  @AppStorage("selection") private var selection = ""
+
   var body: some View {
     content
-          .frame(width: 200, height: 480)
   }
-    
-    @ViewBuilder
-    var content: some View {
-        Text("Hello, World!")
+
+  @ViewBuilder
+  var content: some View {
+    VStack {
+      Form {
+        Section {
+          Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
+
+          TextField("CompartmentId:", text: $compartmentId)
+        } header: {
+          Text("OCI Settings")
+        }
+
+        Section {
+          Text("\(Bundle.main.formattedVersion)")
+        } header: {
+          Text("Application")
+        }
+      }.formStyle(.grouped)
     }
+    .padding(.horizontal, 10)
+  }
 }
 
+// MARK: - Preview
 #Preview {
-  InspectorView()
+  PreferencesView()
+    .environment(DataViewModel.preview)
 }

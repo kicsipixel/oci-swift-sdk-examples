@@ -7,11 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		57DB30522E92BAFA00846510 /* OCIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 57DB30512E92BAFA00846510 /* OCIKit */; };
+		578DE1A72E954699004B4924 /* OCIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 578DE1A62E954699004B4924 /* OCIKit */; };
+		578E17392E96E3DD002C4DDE /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 578E17382E96E3D2002C4DDE /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		5712A5922E92B81E00A85261 /* BucketView.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BucketView.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		578E17382E96E3D2002C4DDE /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -27,7 +29,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				57DB30522E92BAFA00846510 /* OCIKit in Frameworks */,
+				578DE1A72E954699004B4924 /* OCIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -37,6 +39,7 @@
 		5712A5892E92B81E00A85261 = {
 			isa = PBXGroup;
 			children = (
+				578E17382E96E3D2002C4DDE /* README.md */,
 				5712A5942E92B81E00A85261 /* BucketView */,
 				5712A5932E92B81E00A85261 /* Products */,
 			);
@@ -70,7 +73,7 @@
 			);
 			name = BucketView;
 			packageProductDependencies = (
-				57DB30512E92BAFA00846510 /* OCIKit */,
+				578DE1A62E954699004B4924 /* OCIKit */,
 			);
 			productName = BucketView;
 			productReference = 5712A5922E92B81E00A85261 /* BucketView.app */;
@@ -101,7 +104,7 @@
 			mainGroup = 5712A5892E92B81E00A85261;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				57DB30502E92BAFA00846510 /* XCRemoteSwiftPackageReference "oci-swift-sdk" */,
+				578DE1A52E954699004B4924 /* XCLocalSwiftPackageReference "../../oci-swift-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5712A5932E92B81E00A85261 /* Products */;
@@ -118,6 +121,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				578E17392E96E3DD002C4DDE /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,10 +267,9 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 20251005;
 				DEVELOPMENT_TEAM = V46824PR8F;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -295,10 +298,9 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 20251005;
 				DEVELOPMENT_TEAM = V46824PR8F;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -341,21 +343,16 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		57DB30502E92BAFA00846510 /* XCRemoteSwiftPackageReference "oci-swift-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/iliasaz/oci-swift-sdk";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		578DE1A52E954699004B4924 /* XCLocalSwiftPackageReference "../../oci-swift-sdk" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../oci-swift-sdk";
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		57DB30512E92BAFA00846510 /* OCIKit */ = {
+		578DE1A62E954699004B4924 /* OCIKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 57DB30502E92BAFA00846510 /* XCRemoteSwiftPackageReference "oci-swift-sdk" */;
 			productName = OCIKit;
 		};
 /* End XCSwiftPackageProductDependency section */
