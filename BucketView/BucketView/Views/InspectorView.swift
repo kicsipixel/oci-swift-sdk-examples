@@ -26,16 +26,22 @@
 import SwiftUI
 
 struct InspectorView: View {
-  var node: ObjectNode?
+  // Private Properties
+  // Properties
+  let node: ObjectNode?
 
   var body: some View {
+    content
+  }
+
+  @ViewBuilder
+  var content: some View {
     VStack(alignment: .leading) {
       if let node {
         VStack {
           Text("Name: \(node.name)")
           Text("Size: \(node.size ?? "-")")
           Text("Created: \(node.createdAt ?? "-")")
-
         }
       }
       else {
@@ -47,6 +53,7 @@ struct InspectorView: View {
   }
 }
 
+// MARK: - Preview
 #Preview {
-  InspectorView()
+  InspectorView(node: ObjectNode(id: UUID(), name: "TestFile.md", size: "1999", createdAt: "\(Date.now)"))
 }

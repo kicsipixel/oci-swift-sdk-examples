@@ -29,34 +29,22 @@ import OCIKit
 import SwiftUI
 
 struct PreferencesView: View {
-  @AppStorage("autoUpload") private var autoUpload = false
-  @AppStorage("compartmentId") private var compartmentId: String = ""
-  @AppStorage("parBucketLink") private var parBucketLink: String = ""
-  @Environment(DataViewModel.self) private var vm
-  @AppStorage("selection") private var selection = ""
-
   var body: some View {
     content
   }
 
   @ViewBuilder
   var content: some View {
-    VStack {
-      Form {
-        Section {
-          Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
-
-          TextField("CompartmentId:", text: $compartmentId)
-        } header: {
-          Text("OCI Settings")
+    TabView {
+      PreferencesTab1View()
+        .tabItem {
+          Label("OCI", systemImage: "cloud")
         }
 
-        Section {
-          Text("\(Bundle.main.formattedVersion)")
-        } header: {
-          Text("Application")
+      PreferencesTab2View()
+        .tabItem {
+          Label("Application", systemImage: "app")
         }
-      }.formStyle(.grouped)
     }
     .padding(.horizontal, 10)
   }

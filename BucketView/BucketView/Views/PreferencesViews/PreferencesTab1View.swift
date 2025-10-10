@@ -1,8 +1,8 @@
 //
-//  BucketViewApp.swift
+//  PreferencesTab1View.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 05.10.2025.
+//  Created by Szabolcs Tóth on 10.10.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,34 +25,47 @@
 
 import SwiftUI
 
-@main
-struct BucketViewApp: App {
-  let dataViewModel: DataViewModel
+struct PreferencesTab1View: View {
+  // Private Properties
+  @AppStorage("compartmentId") private var compartmentId: String = ""
+  @AppStorage("parBucketLink") private var parBucketLink: String = ""
+  @Environment(DataViewModel.self) private var vm
 
-  init() {
-    do {
-      dataViewModel = try DataViewModel()
-    }
-    catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
-    }
+  // Properties
+  var body: some View {
+    content
   }
 
-  var body: some Scene {
-    WindowGroup {
-      Mainscreen()
-            .environment(dataViewModel)
-    }
-    .windowStyle(.hiddenTitleBar)
-    .defaultSize(width: 640, height: 480)
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
+  @ViewBuilder
+  var content: some View {
+    Form {
+      // OCI Setttings for `namespace`, `compartmentId` and `bucket`
+      Section {
+        Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
 
-    // Preferences
-    Settings {
-      PreferencesView()
-        .environment(dataViewModel)
-        .frame(width: 400, height: 200)
-    }
+        TextField("CompartmentId:", text: $compartmentId)
+
+        // This function hasn't been implemented yet in `PutObject`.
+        TextField("PAR bucket (Disabled):", text: $parBucketLink)
+      } header: {
+        Text("Settings")
+      }
+    }.formStyle(.grouped)
+      .tabItem {
+        Label("OCI", systemImage: "cloud")
+      }
+      .task {
+        do {
+          try await vm.listBuckets()
+        }
+        catch {
+          // TODO: Handle error message here...
+        }
+      }
   }
+}
+
+// MARK: - Preview
+#Preview {
+  PreferencesTab1View()
 }

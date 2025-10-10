@@ -40,6 +40,6 @@ extension Bundle {
 
   /// Combined version string, e.g. "1.2.3 (45)"
   var formattedVersion: String {
-    "v\(appVersion) \(buildNumber)"
+    "version \(appVersion) (\(buildNumber))"
   }
 }

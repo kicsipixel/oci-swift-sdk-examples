@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		57412A852E992DBB00390B7C /* OCIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 57412A842E992DBB00390B7C /* OCIKit */; };
 		578DE1A72E954699004B4924 /* OCIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 578DE1A62E954699004B4924 /* OCIKit */; };
 		578E17392E96E3DD002C4DDE /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 578E17382E96E3D2002C4DDE /* README.md */; };
 /* End PBXBuildFile section */
@@ -30,6 +31,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				578DE1A72E954699004B4924 /* OCIKit in Frameworks */,
+				57412A852E992DBB00390B7C /* OCIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,6 +76,7 @@
 			name = BucketView;
 			packageProductDependencies = (
 				578DE1A62E954699004B4924 /* OCIKit */,
+				57412A842E992DBB00390B7C /* OCIKit */,
 			);
 			productName = BucketView;
 			productReference = 5712A5922E92B81E00A85261 /* BucketView.app */;
@@ -104,7 +107,7 @@
 			mainGroup = 5712A5892E92B81E00A85261;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				578DE1A52E954699004B4924 /* XCLocalSwiftPackageReference "../../oci-swift-sdk" */,
+				57412A832E992DBB00390B7C /* XCRemoteSwiftPackageReference "oci-swift-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5712A5932E92B81E00A85261 /* Products */;
@@ -271,11 +274,13 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 0.100;
 				PRODUCT_BUNDLE_IDENTIFIER = hu.purzelbaum.BucketView;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -302,11 +307,13 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 0.100;
 				PRODUCT_BUNDLE_IDENTIFIER = hu.purzelbaum.BucketView;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -343,14 +350,23 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		578DE1A52E954699004B4924 /* XCLocalSwiftPackageReference "../../oci-swift-sdk" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../oci-swift-sdk";
+/* Begin XCRemoteSwiftPackageReference section */
+		57412A832E992DBB00390B7C /* XCRemoteSwiftPackageReference "oci-swift-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/iliasaz/oci-swift-sdk";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		57412A842E992DBB00390B7C /* OCIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 57412A832E992DBB00390B7C /* XCRemoteSwiftPackageReference "oci-swift-sdk" */;
+			productName = OCIKit;
+		};
 		578DE1A62E954699004B4924 /* OCIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OCIKit;

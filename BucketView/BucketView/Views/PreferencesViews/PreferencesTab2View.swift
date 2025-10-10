@@ -1,8 +1,8 @@
 //
-//  BucketViewApp.swift
+//  PreferencesTab2View.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 05.10.2025.
+//  Created by Szabolcs Tóth on 10.10.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,34 +25,29 @@
 
 import SwiftUI
 
-@main
-struct BucketViewApp: App {
-  let dataViewModel: DataViewModel
-
-  init() {
-    do {
-      dataViewModel = try DataViewModel()
-    }
-    catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
-    }
+struct PreferencesTab2View: View {
+  var body: some View {
+    content
   }
 
-  var body: some Scene {
-    WindowGroup {
-      Mainscreen()
-            .environment(dataViewModel)
-    }
-    .windowStyle(.hiddenTitleBar)
-    .defaultSize(width: 640, height: 480)
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
-
-    // Preferences
-    Settings {
-      PreferencesView()
-        .environment(dataViewModel)
-        .frame(width: 400, height: 200)
+  @ViewBuilder
+  var content: some View {
+    VStack {
+      Text("BucketView")
+        .bold()
+        .font(.title3)
+        .padding(.top, 40)
+      Form {
+        // Application version and build for easier bug tracking
+        Section {
+          Text("\(Bundle.main.formattedVersion)")
+        }
+      }
+      .formStyle(.grouped)
     }
   }
+}
+
+#Preview {
+  PreferencesTab2View()
 }
