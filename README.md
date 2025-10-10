@@ -34,7 +34,7 @@ Key features:
 
 Each example is self-contained and includes setup instructions in its README. To run them, make sure you have:
 - A valid OCI configuration file (`~/.oci/config`)
-- Swift 5.9+ and Xcode 15 or later
+- Swift 6.1+ and Xcode 15 or later
 - The oci-swift-sdk integrated via Swift Package Manager
 
 ---
