@@ -29,13 +29,31 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct DropzoneView: View {
+  // Private properties
   @Environment(DataViewModel.self) private var vm
   @State private var isDropActive = false
   @State private var dropzoneWidth: CGFloat = 340
   @State private var dropzoneHeight: CGFloat = 200
+  @State private var pendingUploadPath: String?
+  @State private var showingConfirmation = false
 
   var body: some View {
     content
+      .alert("Confirmation", isPresented: $showingConfirmation) {
+        Button("OK", role: .destructive) {
+          if let path = pendingUploadPath {
+            Task {
+              try? await vm.putObject(filePath: path)
+              pendingUploadPath = nil
+            }
+          }
+        }
+        Button("Cancel", role: .cancel) {
+          pendingUploadPath = nil
+        }
+      } message: {
+        Text("Are you sure you want to upload this file?")
+      }
   }
 
   @ViewBuilder
@@ -45,19 +63,30 @@ struct DropzoneView: View {
       .onDrop(of: [.fileURL], isTargeted: $isDropActive) { providers, _ in
         for provider in providers {
           _ = provider.loadDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier) { data, _ in
-            guard let data, let url = URL(dataRepresentation: data, relativeTo: nil), url.isFileURL
-            else { return }
+            guard let data,
+                  let url = URL(dataRepresentation: data, relativeTo: nil),
+                  url.isFileURL else { return }
 
             var isDirectory: ObjCBool = false
             FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-            // Handle error message if folder is dropped
             guard !isDirectory.boolValue else {
               print("Folders are not allowed: \(url.lastPathComponent)")
               return
             }
-            Task {
-              try await vm.putObject(filePath: url.path)
+
+            let confirmationIsNeeded = !UserDefaults.standard.bool(forKey: "autoUpload")
+
+            if confirmationIsNeeded {
+              DispatchQueue.main.async {
+                pendingUploadPath = url.path
+                showingConfirmation = true
+              }
+            } else {
+              Task {
+                try? await vm.putObject(filePath: url.path)
+              }
             }
+
             print("Dropped file name: \(url.lastPathComponent)")
           }
         }

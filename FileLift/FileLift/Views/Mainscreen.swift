@@ -36,6 +36,28 @@ struct Mainscreen: View {
   @State private var errorMessage: String = ""
 
   var body: some View {
+    content
+      .task {
+        do {
+          try await vm.getNamespace()
+        }
+        catch {
+          errorMessage = error.localizedDescription
+          showingAlert = true
+        }
+      }
+      // Error
+      .alert("Error happened", isPresented: $showingAlert) {
+        Button("Got it!", role: .cancel) {}
+      } message: {
+        Text(errorMessage)
+      }
+      // Confirmation
+
+  }
+
+  @ViewBuilder
+  var content: some View {
     ZStack {
       Color.white
         .ignoresSafeArea()
@@ -57,20 +79,30 @@ struct Mainscreen: View {
         .bold()
         .foregroundStyle(.accent)
       }
-    }
-    .task {
-      do {
-        try await vm.getNamespace()
+
+      ProgressView(label: {
+        Text("Uploading file...")
+      })
+      .padding(20)
+      .background(.white.opacity(0.93))
+      .clipShape(RoundedRectangle(cornerRadius: 10))
+      .opacity(vm.isUploading ? 1 : 0)
+
+      if let message = vm.uploadSuccessMessage {
+        VStack {
+          Image(systemName: "square.and.arrow.up.badge.checkmark")
+            .font(.system(size: 32))
+            .padding(.bottom, 10)
+          Text("\(message)")
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 280)
+            .multilineTextAlignment(.center)
+        }
+        .padding(10)
+        .background(.white.opacity(0.93))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
       }
-      catch {
-        errorMessage = error.localizedDescription
-        showingAlert = true
-      }
-    }
-    .alert("Error happened", isPresented: $showingAlert) {
-      Button("Got it!", role: .cancel) {}
-    } message: {
-      Text(errorMessage)
     }
   }
 }

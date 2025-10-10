@@ -30,12 +30,14 @@ import SwiftUI
 
 @Observable @MainActor
 final class DataViewModel {
-  // Private properties
   // Properties
   let client: ObjectStorageClient
   var namespace: String = ""
   var buckets = [BucketSummary]()
+  var isUploading = false
+  var uploadSuccessMessage: String? = nil
 
+  // MARK: - Initializer
   init() throws {
     let env = ProcessInfo.processInfo.environment
     let ociConfigFilePath =
@@ -75,22 +77,36 @@ final class DataViewModel {
       try await client
       .listBuckets(
         namespaceName:
-          namespace
-          .replacingOccurrences(of: "\"", with: ""),
+          namespace,
         compartmentId: compartmentId
       )
   }
 
   // MARK: - Pusts object/file into the bucket
-  // TODO: Possible errors are not handled at all.
+  // TODO: Possible errors are not handled at all. Force unwrapping.
   func putObject(filePath: String) async throws {
+    let confirmationIsNeeded = !UserDefaults.standard.bool(forKey: "autoUpload")
+
+    isUploading = true
+    defer { isUploading = false }
+
     let url = URL(fileURLWithPath: filePath)
     let fileData = try Data(contentsOf: url)
     try await client.putObject(
-      namespaceName: namespace.replacingOccurrences(of: "\"", with: ""),
+      namespaceName: namespace,
       bucketName: UserDefaults.standard.string(forKey: "selection")!,
       objectName: "\(url.lastPathComponent)",
       putObjectBody: fileData
     )
+
+    self.showUploadSuccessMessage("Uploaded \(url.lastPathComponent) successfully")
+  }
+
+  // MARK: - Set and reset `uploadSuccessMessage`
+  func showUploadSuccessMessage(_ text: String) {
+    uploadSuccessMessage = text
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+      self.uploadSuccessMessage = nil
+    }
   }
 }

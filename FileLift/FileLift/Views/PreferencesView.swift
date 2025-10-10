@@ -29,7 +29,7 @@ import OCIKit
 import SwiftUI
 
 struct PreferencesView: View {
-  @AppStorage("autoUpload") private var autoUpload = false
+  @AppStorage("autoUpload") private var autoUpload = true
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
   @Environment(DataViewModel.self) private var vm
@@ -43,13 +43,14 @@ struct PreferencesView: View {
   var content: some View {
     VStack {
       Form {
+        // Autoupload - no need confirmation for uploading
         Section {
           Toggle("Enable Auto Upload", isOn: $autoUpload)
-            .disabled(true)
         } header: {
-          Text("Upload (Disabled)")
+          Text("Upload")
         }
 
+        // OCI Setttings for `namespace`, `compartmentId` and `bucket`
         Section {
           Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
 
@@ -74,11 +75,13 @@ struct PreferencesView: View {
               .frame(width: 140, height: 1)
           }
 
+          // This function hasn't been implemented yet in `PutObject`.
           TextField("PAR bucket (Disabled):", text: $parBucketLink)
         } header: {
           Text("OCI Settings")
         }
 
+        // Application version and build for easier bug tracking
         Section {
           Text("\(Bundle.main.formattedVersion)")
         } header: {
@@ -89,7 +92,9 @@ struct PreferencesView: View {
           do {
             try await vm.listBuckets()
           }
-          catch {}
+          catch {
+            // TODO: Handle error message here...
+          }
         }
     }
     .padding(.horizontal, 10)

@@ -28,10 +28,17 @@
 import SwiftUI
 
 struct BackgroundView: View {
-  var width: CGFloat = 340
-  var height: CGFloat = 200
+  // Properties
+  let width: CGFloat
+  let height: CGFloat
 
   var body: some View {
+    content
+  }
+
+  @ViewBuilder
+  var content: some View {
+    // Dropzone
     RoundedRectangle(cornerRadius: 16)
       .fill(Color.accent.opacity(0.1))
       .frame(width: width, height: height)
@@ -45,5 +52,5 @@ struct BackgroundView: View {
 
 // MARK: - Preview
 #Preview {
-  BackgroundView()
+    BackgroundView(width: 340, height: 200)
 }
