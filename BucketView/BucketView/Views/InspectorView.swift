@@ -26,30 +26,42 @@
 import SwiftUI
 
 struct InspectorView: View {
-  // Private Properties
-  // Properties
   let node: ObjectNode?
 
   var body: some View {
-    content
-  }
-
-  @ViewBuilder
-  var content: some View {
-    VStack(alignment: .leading) {
+    VStack(spacing: 20) {
+        Spacer()
       if let node {
-        VStack {
-          Text("Name: \(node.name)")
-          Text("Size: \(node.size ?? "-")")
-          Text("Created: \(node.createdAt ?? "-")")
+        Image(node.size != nil ? "FileIcon" : "FolderIcon")
+          .resizable()
+          .frame(width: 60, height: 60)
+
+        Text("\(node.name)")
+          .bold()
+          .font(.title2)
+
+        Form {
+          Section {
+            VStack(alignment: .leading, spacing: 8) {
+              Text("Name: \(node.name)")
+              Text("Size: \(node.size ?? "")")
+              Text("Created: \(node.createdAt ?? "")")
+            }
+          } header: {
+            Text("Details")
+          }
         }
+        .padding(.top, 4)
       }
       else {
         Text("No selection")
           .foregroundColor(.secondary)
       }
+
+      Spacer()
     }
-    .padding()
+    .padding(.horizontal, 20)
+    .frame(minWidth: 300)
   }
 }
 

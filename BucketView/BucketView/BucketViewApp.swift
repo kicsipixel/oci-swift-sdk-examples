@@ -52,7 +52,7 @@ struct BucketViewApp: App {
     Settings {
       PreferencesView()
         .environment(dataViewModel)
-        .frame(width: 400, height: 200)
+        .frame(width: 400, height: 400)
     }
   }
 }

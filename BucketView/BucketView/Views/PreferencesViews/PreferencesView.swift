@@ -53,5 +53,4 @@ struct PreferencesView: View {
 // MARK: - Preview
 #Preview {
   PreferencesView()
-    .environment(DataViewModel.preview)
 }

@@ -29,6 +29,10 @@ struct PreferencesTab1View: View {
   // Private Properties
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
+  @AppStorage("etag") private var etag: Bool = false
+  @AppStorage("md5") private var md5: Bool = false
+  @AppStorage("storagetier") private var storageTier: Bool = false
+  @AppStorage("archivalstate") private var archivalState: Bool = false
   @Environment(DataViewModel.self) private var vm
 
   // Properties
@@ -40,6 +44,7 @@ struct PreferencesTab1View: View {
   var content: some View {
     Form {
       // OCI Setttings for `namespace`, `compartmentId` and `bucket`
+      // Valid values: `name`, `size`, `etag`, `md5`, `timeCreated`, `timeModified`, `storageTier`, `archivalState`.
       Section {
         Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
 
@@ -50,6 +55,23 @@ struct PreferencesTab1View: View {
       } header: {
         Text("Settings")
       }
+
+      Section {
+        Toggle(isOn: $etag) {
+          Text("ETag:")
+        }
+        Toggle(isOn: $md5) {
+          Text("MD5:")
+        }
+        Toggle(isOn: $storageTier) {
+          Text("Storage Tier:")
+        }
+        Toggle(isOn: $archivalState) {
+          Text("Archival State:")
+        }
+      } header: {
+        Text("Additional Fields (Disabled)")
+      }.disabled(true)
     }.formStyle(.grouped)
       .tabItem {
         Label("OCI", systemImage: "cloud")
@@ -68,4 +90,5 @@ struct PreferencesTab1View: View {
 // MARK: - Preview
 #Preview {
   PreferencesTab1View()
+    .environment(DataViewModel.preview)
 }

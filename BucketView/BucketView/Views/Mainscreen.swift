@@ -99,18 +99,18 @@ struct Mainscreen: View {
 
       List(selection: $selectedID) {
         OutlineGroup(treeObjects, children: \.children) { node in
-          Text(node.name)
+            HStack {
+                Image(node.size?.isEmpty == nil ? "FolderIcon" : "FileIcon")
+                    .resizable()
+                    .frame(width: 30, height: 30)
+            
+                Text(node.name)
+            }
             .tag(node.id)
         }
       }
       .listStyle(.inset)
       .frame(minHeight: 300)
-
-      if let s = selectedID {
-        Text("Selected: \(s)")
-          .font(.caption)
-          .foregroundColor(.secondary)
-      }
     }
     .padding()
     .inspector(isPresented: $showInspector) {
