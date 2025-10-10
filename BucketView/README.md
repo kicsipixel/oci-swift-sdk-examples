@@ -4,7 +4,7 @@
 
 # BucketView
 
-**BucketView** is a lightweight macOS client for browsing and uploading files to [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/europe/cloud/) Object Storage. Designed with clarity and elegance in mind, it provides a drag-and-drop interface for seamless uploads and a native file inspector to view your cloud-stored content.
+**BucketView** is a lightweight macOS client for browsing bucket and objets in [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/europe/cloud/) Object Storage. Designed with clarity and elegance in mind, it provides a file inspector to view your cloud-stored content.
 
 <p align="center">
   <img src="./img/BucketView.png" alt="BucketView UI" width="55%">
