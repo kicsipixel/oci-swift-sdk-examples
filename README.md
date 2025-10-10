@@ -19,7 +19,7 @@ Key features:
 
 ### BucketView
 
-**FileLift** is a lightweight macOS client for browsing files to Oracle Cloud Infrastructure (OCI) Object Storage. Designed with clarity and elegance in mind.
+**BucketView** is a lightweight macOS client for browsing bucket and objets in Oracle Cloud Infrastructure (OCI) Object Storage. Designed with clarity and elegance in mind, it provides a file inspector to view your cloud-stored content.
 
 Key features:
 - Retrieves Object Storage namespace
