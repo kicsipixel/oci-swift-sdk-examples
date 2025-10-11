@@ -1,11 +1,9 @@
 //
-//  FileLiftApp.swift
+//  CheckForUpdates.swift
 //  FileLift
 //
-//  Created by Szabolcs Tóth on 03.10.2025.
-//
-//  This file is part of FileLift and is licensed under the MIT License.
-//  Copyright © 2025 Szabolcs Tóth.
+//  Created by Szabolcs Tóth on 11.10.2025.
+//  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -25,45 +23,30 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+internal import Combine
 import Sparkle
 import SwiftUI
 
-@main
-struct FileLiftApp: App {
-  // Private Properties
-  private let updaterController: SPUStandardUpdaterController
-  // Properties
-  let dataViewModel: DataViewModel
+final class CheckForUpdatesViewModel: ObservableObject {
+  @Published var canCheckForUpdates = false
 
-  init() {
-    updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-    do {
-      dataViewModel = try DataViewModel()
-    }
-    catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
-    }
+  init(updater: SPUUpdater) {
+    updater.publisher(for: \.canCheckForUpdates)
+      .assign(to: &$canCheckForUpdates)
+  }
+}
+
+struct CheckForUpdatesView: View {
+  @ObservedObject private var checkForUpdatesViewModel: CheckForUpdatesViewModel
+  private let updater: SPUUpdater
+
+  init(updater: SPUUpdater) {
+    self.updater = updater
+    self.checkForUpdatesViewModel = CheckForUpdatesViewModel(updater: updater)
   }
 
-  var body: some Scene {
-    // Mainscreen
-    WindowGroup {
-      Mainscreen()
-        .environment(dataViewModel)
-    }
-    .commands {
-      CommandGroup(after: .appInfo) {
-        CheckForUpdatesView(updater: updaterController.updater)
-      }
-    }
-    .defaultPosition(.center)
-    .windowResizability(.contentSize)
-
-    // Preferences
-    Settings {
-      PreferencesView()
-        .environment(dataViewModel)
-        .frame(width: 400, height: 460)
-    }
+  var body: some View {
+    Button("Check for Updates…", action: updater.checkForUpdates)
+      .disabled(!checkForUpdatesViewModel.canCheckForUpdates)
   }
 }
