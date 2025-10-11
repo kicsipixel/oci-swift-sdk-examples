@@ -88,7 +88,7 @@ final class DataViewModel {
       objects = try await client.listObjects(namespaceName: namespace.replacingOccurrences(of: "\"", with: ""), bucketName: bucketName).objects
     }
     catch {
-        // TODO: Handle error message
+      // TODO: Handle error message
       print("\(error)")
     }
   }

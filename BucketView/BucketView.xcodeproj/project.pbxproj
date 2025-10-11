@@ -10,6 +10,7 @@
 		57412A852E992DBB00390B7C /* OCIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 57412A842E992DBB00390B7C /* OCIKit */; };
 		578DE1A72E954699004B4924 /* OCIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 578DE1A62E954699004B4924 /* OCIKit */; };
 		578E17392E96E3DD002C4DDE /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 578E17382E96E3D2002C4DDE /* README.md */; };
+		57B77C622E9AA6BB007B5578 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 57B77C612E9AA6BB007B5578 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,9 +18,22 @@
 		578E17382E96E3D2002C4DDE /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		57B77C642E9AA740007B5578 /* Exceptions for "BucketView" folder in "BucketView" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5712A5912E92B81E00A85261 /* BucketView */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5712A5942E92B81E00A85261 /* BucketView */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				57B77C642E9AA740007B5578 /* Exceptions for "BucketView" folder in "BucketView" target */,
+			);
 			path = BucketView;
 			sourceTree = "<group>";
 		};
@@ -30,6 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				57B77C622E9AA6BB007B5578 /* Sparkle in Frameworks */,
 				578DE1A72E954699004B4924 /* OCIKit in Frameworks */,
 				57412A852E992DBB00390B7C /* OCIKit in Frameworks */,
 			);
@@ -77,6 +92,7 @@
 			packageProductDependencies = (
 				578DE1A62E954699004B4924 /* OCIKit */,
 				57412A842E992DBB00390B7C /* OCIKit */,
+				57B77C612E9AA6BB007B5578 /* Sparkle */,
 			);
 			productName = BucketView;
 			productReference = 5712A5922E92B81E00A85261 /* BucketView.app */;
@@ -108,6 +124,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				57412A832E992DBB00390B7C /* XCRemoteSwiftPackageReference "oci-swift-sdk" */,
+				57B77C602E9AA6BB007B5578 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5712A5932E92B81E00A85261 /* Products */;
@@ -268,12 +285,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20251005;
+				CURRENT_PROJECT_VERSION = 20251011;
 				DEVELOPMENT_TEAM = V46824PR8F;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BucketView/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -281,7 +299,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 0.100;
+				MARKETING_VERSION = 0.102;
 				PRODUCT_BUNDLE_IDENTIFIER = hu.purzelbaum.BucketView;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -301,12 +319,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20251005;
+				CURRENT_PROJECT_VERSION = 20251011;
 				DEVELOPMENT_TEAM = V46824PR8F;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BucketView/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -314,7 +333,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 0.100;
+				MARKETING_VERSION = 0.102;
 				PRODUCT_BUNDLE_IDENTIFIER = hu.purzelbaum.BucketView;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -359,6 +378,14 @@
 				kind = branch;
 			};
 		};
+		57B77C602E9AA6BB007B5578 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -370,6 +397,11 @@
 		578DE1A62E954699004B4924 /* OCIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OCIKit;
+		};
+		57B77C612E9AA6BB007B5578 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 57B77C602E9AA6BB007B5578 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
