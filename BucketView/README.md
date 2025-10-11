@@ -24,7 +24,7 @@ Ensure you have a valid OCI `config` file located at:
 ```
 
 ### Step 2: Launch and Configure
-Start the BucketView application and navigate to **Settings...**. Enter your `compartmentId` to fetch the list of available buckets. Select a bucket to begin browsing and uploading files.
+Start the BucketView application and navigate to **Settings...**. Enter your `compartmentId` to fetch the list of available buckets. Select a bucket to begin browsing files.
 
 ---
 
