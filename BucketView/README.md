@@ -23,9 +23,6 @@ Ensure you have a valid OCI `config` file located at:
 ~/.oci/config
 ```
 
-
-This file must include your API key and profile information. You can generate it using the [OCI CLI](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm).
-
 ### Step 2: Launch and Configure
 Start the BucketView application and navigate to **Settings...**. Enter your `compartmentId` to fetch the list of available buckets. Select a bucket to begin browsing and uploading files.
 
