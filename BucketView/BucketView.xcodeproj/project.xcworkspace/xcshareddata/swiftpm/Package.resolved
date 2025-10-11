@@ -1,5 +1,5 @@
 {
-  "originHash" : "bffcd3b5b554f0054cd75eb0dcc56d536106da00ad5c3e83a0d465ddccdfe7e5",
+  "originHash" : "fe0c7c71ba61185221ff96d8ab13b1d257669bc09ac44ced7aceac8e09f00990",
   "pins" : [
     {
       "identity" : "oci-swift-sdk",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "0952aac9ca54324ff25191569fd9c48eec424772",
         "version" : "3.0.2"
+      }
+    },
+    {
+      "identity" : "sparkle",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sparkle-project/Sparkle",
+      "state" : {
+        "revision" : "9a1d2a19d3595fcf8d9c447173f9a1687b3dcadb",
+        "version" : "2.8.0"
       }
     },
     {

@@ -1,8 +1,8 @@
 //
-//  BucketViewApp.swift
+//  CheckForUpdates.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 05.10.2025.
+//  Created by Szabolcs Tóth on 11.10.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,49 +23,30 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+internal import Combine
 import Sparkle
 import SwiftUI
 
-@main
-struct BucketViewApp: App {
-  // Private Properties
-  private let updaterController: SPUStandardUpdaterController
+final class CheckForUpdatesViewModel: ObservableObject {
+  @Published var canCheckForUpdates = false
 
-  // Properties
-  let dataViewModel: DataViewModel
+  init(updater: SPUUpdater) {
+    updater.publisher(for: \.canCheckForUpdates)
+      .assign(to: &$canCheckForUpdates)
+  }
+}
 
-  init() {
-    // Sparkle init
-    updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-    do {
-      // DataViewModel init
-      dataViewModel = try DataViewModel()
-    }
-    catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
-    }
+struct CheckForUpdatesView: View {
+  @ObservedObject private var checkForUpdatesViewModel: CheckForUpdatesViewModel
+  private let updater: SPUUpdater
+
+  init(updater: SPUUpdater) {
+    self.updater = updater
+    self.checkForUpdatesViewModel = CheckForUpdatesViewModel(updater: updater)
   }
 
-  var body: some Scene {
-    WindowGroup {
-      Mainscreen()
-        .environment(dataViewModel)
-    }
-    .commands {
-      CommandGroup(after: .appInfo) {
-        CheckForUpdatesView(updater: updaterController.updater)
-      }
-    }
-    .windowStyle(.hiddenTitleBar)
-    .defaultSize(width: 640, height: 480)
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
-
-    // Preferences
-    Settings {
-      PreferencesView()
-        .environment(dataViewModel)
-        .frame(width: 400, height: 400)
-    }
+  var body: some View {
+    Button("Check for Updates…", action: updater.checkForUpdates)
+      .disabled(!checkForUpdatesViewModel.canCheckForUpdates)
   }
 }
