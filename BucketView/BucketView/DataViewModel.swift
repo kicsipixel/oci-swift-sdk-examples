@@ -80,6 +80,14 @@ final class DataViewModel {
           .replacingOccurrences(of: "\"", with: ""),
         compartmentId: compartmentId
       )
+
+    // Use the first bucket
+    if let firstBucket = buckets.first {
+      try await listObjects(bucketName: firstBucket.name)
+    }
+    else {
+      buckets = []
+    }
   }
 
   // MARK: - Lists object in the selected bucket

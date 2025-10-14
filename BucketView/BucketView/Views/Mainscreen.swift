@@ -60,10 +60,10 @@ struct Mainscreen: View {
   @State private var showingAlert: Bool = false
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @State private var errorMessage: String = ""
-  @AppStorage("selection") private var selection = ""
-
   @State private var treeObjects: [ObjectNode] = []
   @State private var selectedID: ObjectSummary.ID?
+    @State private var selection: String? = nil
+
   var selectedNode: ObjectNode? {
     findNode(in: treeObjects, matching: selectedID)
   }
@@ -80,14 +80,17 @@ struct Mainscreen: View {
     VStack {
       Picker("Select a bucket:", selection: $selection) {
         ForEach(vm.buckets, id: \.name) { bucket in
-          Text(bucket.name)
+          Text(bucket.name).tag(Optional(bucket.name))
         }
       }
       .padding()
       .onChange(of: selection) { _, newValue in
+        // Handle optional selection
+        guard let bucketName = newValue else { return }
+
         Task {
           do {
-            try await vm.listObjects(bucketName: newValue)
+            try await vm.listObjects(bucketName: bucketName)
             treeObjects = buildTree(from: vm.objects)
           }
           catch {
@@ -97,20 +100,28 @@ struct Mainscreen: View {
         }
       }
 
-      List(selection: $selectedID) {
-        OutlineGroup(treeObjects, children: \.children) { node in
-            HStack {
-                Image(node.size?.isEmpty == nil ? "FolderIcon" : "FileIcon")
-                    .resizable()
-                    .frame(width: 30, height: 30)
+        ZStack {
+          
             
-                Text(node.name)
+            List(selection: $selectedID) {
+                OutlineGroup(treeObjects, children: \.children) { node in
+                    HStack {
+                        Image(node.size?.isEmpty == nil ? "FolderIcon" : "FileIcon")
+                            .resizable()
+                            .frame(width: 30, height: 30)
+                        
+                        Text(node.name)
+                    }
+                    .tag(node.id)
+                }
             }
-            .tag(node.id)
+            .listStyle(.inset)
+            .frame(minHeight: 300)
+            
+            
+            Text("No bucket was found or it is empty.")
+                .opacity(vm.buckets.isEmpty ? 1 : 0)
         }
-      }
-      .listStyle(.inset)
-      .frame(minHeight: 300)
     }
     .padding()
     .inspector(isPresented: $showInspector) {
@@ -120,7 +131,7 @@ struct Mainscreen: View {
       do {
         try await vm.getNamespace()
         try await vm.listBuckets()
-        try await vm.listObjects(bucketName: UserDefaults.standard.string(forKey: "bucketName") ?? "")
+          selection = vm.buckets.first?.name
         treeObjects = buildTree(from: vm.objects)
       }
       catch {
