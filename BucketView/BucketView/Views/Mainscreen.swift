@@ -101,7 +101,7 @@ struct Mainscreen: View {
       }
 
         ZStack {
-          
+            Text(vm.buckets.isEmpty ? "No buckets were found." :"The bucket is empty.")
             
             List(selection: $selectedID) {
                 OutlineGroup(treeObjects, children: \.children) { node in
@@ -117,10 +117,7 @@ struct Mainscreen: View {
             }
             .listStyle(.inset)
             .frame(minHeight: 300)
-            
-            
-            Text("No bucket was found or it is empty.")
-                .opacity(vm.buckets.isEmpty ? 1 : 0)
+            .opacity(vm.objects.isEmpty ? 0 : 1)
         }
     }
     .padding()
@@ -131,7 +128,9 @@ struct Mainscreen: View {
       do {
         try await vm.getNamespace()
         try await vm.listBuckets()
-          selection = vm.buckets.first?.name
+          if let first = vm.buckets.first {
+              selection = first.name
+          }
         treeObjects = buildTree(from: vm.objects)
       }
       catch {

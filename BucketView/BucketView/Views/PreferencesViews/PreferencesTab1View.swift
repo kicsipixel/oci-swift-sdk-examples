@@ -49,12 +49,18 @@ struct PreferencesTab1View: View {
         Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
 
         TextField("CompartmentId:", text: $compartmentId)
-
+          
         // This function hasn't been implemented yet in `PutObject`.
         TextField("PAR bucket (Disabled):", text: $parBucketLink)
       } header: {
         Text("Settings")
       }
+        
+        Button("Set compartment ID") {
+            Task {
+             try await   vm.listBuckets()
+            }
+        }.frame(maxWidth: .infinity)
 
       Section {
         Toggle(isOn: $etag) {

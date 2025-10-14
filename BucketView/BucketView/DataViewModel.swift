@@ -69,6 +69,7 @@ final class DataViewModel {
   // MARK: - Lists buckets in the user given compartment
   // TODO: Error handling is missing.
   func listBuckets() async throws {
+      buckets = []
     var compartmentId: String {
       UserDefaults.standard.string(forKey: "compartmentId") ?? ""
     }
@@ -84,16 +85,16 @@ final class DataViewModel {
     // Use the first bucket
     if let firstBucket = buckets.first {
       try await listObjects(bucketName: firstBucket.name)
-    }
-    else {
-      buckets = []
+    } else {
+        objects = []
     }
   }
 
   // MARK: - Lists object in the selected bucket
   func listObjects(bucketName: String) async throws {
+      objects = []
     do {
-      objects = try await client.listObjects(namespaceName: namespace.replacingOccurrences(of: "\"", with: ""), bucketName: bucketName).objects
+      objects = try await client.listObjects(namespaceName: namespace, bucketName: bucketName).objects
     }
     catch {
       // TODO: Handle error message
