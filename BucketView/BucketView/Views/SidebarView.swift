@@ -1,8 +1,8 @@
 //
-//  BucketViewApp.swift
+//  SidebarView.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 05.10.2025.
+//  Created by Szabolcs Tóth on 17.10.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,48 +23,39 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Sparkle
+import OCIKit
 import SwiftUI
 
-@main
-struct BucketViewApp: App {
-  // Private Properties
-  private let updaterController: SPUStandardUpdaterController
+struct SidebarView: View {
+  // Private properties
+  @Environment(DataViewModel.self) private var vm
+  @Binding var selectedBucket: String?
 
   // Properties
-  let dataViewModel: DataViewModel
+  var body: some View {
+    ZStack {
+      // Background
+     // Color.sidebar.ignoresSafeArea()
 
-  init() {
-    // Sparkle init
-    updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-    do {
-      // DataViewModel init
-      dataViewModel = try DataViewModel()
-    }
-    catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
-    }
-  }
-
-  var body: some Scene {
-    WindowGroup {
-      Mainscreen()
-        .environment(dataViewModel)
-    }
-    .commands {
-      CommandGroup(after: .appInfo) {
-        CheckForUpdatesView(updater: updaterController.updater)
+      // List
+      List(selection: $selectedBucket) {
+        Section("BUCKETS") {
+          ForEach(vm.buckets, id: \.name) { bucket in
+            Label("\(bucket.name)", systemImage: "balloon.2.fill")
+              .foregroundStyle(Color.text)
+              .bold()
+              .shadow(color: .white.opacity(0.35), radius: 0, x: 1, y: 1)
+          }
+        }
       }
-    }
-    .defaultSize(width: 840, height: 480)
-    .windowResizability(.contentSize)
-    .defaultPosition(.center)
-
-    // Preferences
-    Settings {
-      PreferencesView()
-        .environment(dataViewModel)
-        .frame(width: 400, height: 400)
+      .listStyle(SidebarListStyle())
+      .frame(minWidth: 300)
     }
   }
+}
+
+// MARK: - Preview
+#Preview {
+    SidebarView(selectedBucket: .constant(nil))
+    .environment(DataViewModel.preview)
 }
