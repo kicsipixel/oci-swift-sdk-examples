@@ -2,10 +2,8 @@
 //  Mainscreen.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 03.10.2025.
-//
-//  This file is part of FileLift and is licensed under the MIT License.
-//  Copyright © 2025 Szabolcs Tóth.
+//  Created by Szabolcs Tóth on 17.10.2025.
+//  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -53,18 +51,15 @@ struct ObjectNode: Identifiable, Hashable {
   }
 }
 
-// MARK: - Main Screen
 struct Mainscreen: View {
-  @State private var showInspector: Bool = true
+  // Private Properties
   @Environment(DataViewModel.self) private var vm
-  @State private var showingAlert: Bool = false
-  @AppStorage("compartmentId") private var compartmentId: String = ""
-  @State private var errorMessage: String = ""
+  @State private var isInspectorShown: Bool = false
+  @State private var selectedBucket: String? = nil
   @State private var treeObjects: [ObjectNode] = []
   @State private var selectedID: ObjectSummary.ID?
-    @State private var selection: String? = nil
 
-  var selectedNode: ObjectNode? {
+  private var selectedNode: ObjectNode? {
     findNode(in: treeObjects, matching: selectedID)
   }
 
@@ -76,33 +71,13 @@ struct Mainscreen: View {
     return formatter
   }()
 
+  // Properties
   var body: some View {
-    VStack {
-      Picker("Select a bucket:", selection: $selection) {
-        ForEach(vm.buckets, id: \.name) { bucket in
-          Text(bucket.name).tag(Optional(bucket.name))
-        }
-      }
-      .padding()
-      .onChange(of: selection) { _, newValue in
-        // Handle optional selection
-        guard let bucketName = newValue else { return }
-
-        Task {
-          do {
-            try await vm.listObjects(bucketName: bucketName)
-            treeObjects = buildTree(from: vm.objects)
-          }
-          catch {
-            errorMessage = error.localizedDescription
-            showingAlert = true
-          }
-        }
-      }
-
-        ZStack {
-            Text(vm.buckets.isEmpty ? "No buckets were found." :"The bucket is empty.")
-            
+    NavigationSplitView {
+      SidebarView(selectedBucket: $selectedBucket)
+    } detail: {
+      ZStack {
+        VStack {
             List(selection: $selectedID) {
                 OutlineGroup(treeObjects, children: \.children) { node in
                     HStack {
@@ -116,41 +91,29 @@ struct Mainscreen: View {
                 }
             }
             .listStyle(.inset)
-            .frame(minHeight: 300)
-            .opacity(vm.objects.isEmpty ? 0 : 1)
-        }
-    }
-    .padding()
-    .inspector(isPresented: $showInspector) {
-      InspectorView(node: selectedNode)
-    }
-    .task {
-      do {
-        try await vm.getNamespace()
-        try await vm.listBuckets()
-          if let first = vm.buckets.first {
-              selection = first.name
+          .inspector(isPresented: $isInspectorShown) {
+            InspectorView(node: selectedNode)
           }
-        treeObjects = buildTree(from: vm.objects)
+        }
+        .frame(minWidth: 500)
       }
-      catch {
-        errorMessage = error.localizedDescription
-        showingAlert = true
+      .task {
+        try? await vm.getNamespace()
+        try? await vm.listBuckets()
+          treeObjects = buildTree(from: vm.objects)
       }
-    }
-    .alert("Error happened", isPresented: $showingAlert) {
-      Button("Got it!", role: .cancel) {}
-    } message: {
-      Text(errorMessage)
-    }
-    .toolbar {
-      ToolbarItemGroup {
-        Text("BucketView")
-          .bold()
-          .font(.title3)
-
-        Button(action: { showInspector.toggle() }) {
-          Label("Toggle Inspector", systemImage: "sidebar.right")
+      .onChange(of: selectedBucket) { _, newValue in
+        guard let bucketName = newValue else { return }
+        Task {
+          try await vm.listObjects(bucketName: bucketName)
+            treeObjects = buildTree(from: vm.objects)
+        }
+      }
+      .toolbar {
+        ToolbarItemGroup(placement: .automatic) {
+          Button(action: { isInspectorShown.toggle() }) {
+            Label("Toggle Inspector", systemImage: "sidebar.right")
+          }
         }
       }
     }
@@ -215,7 +178,14 @@ struct Mainscreen: View {
 }
 
 // MARK: - Preview
-#Preview {
-  Mainscreen()
-    .environment(DataViewModel.preview)
+#Preview("Light Mode") {
+    Mainscreen()
+        .environment(DataViewModel.preview)
 }
+
+#Preview("Dark Mode") {
+    Mainscreen()
+        .environment(DataViewModel.preview)
+        .preferredColorScheme(.dark)
+}
+

@@ -1,11 +1,9 @@
 //
-//  PreferencesView.swift
+//  SidebarView.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 03.10.2025.
-//
-//  This file is part of FileLift and is licensed under the MIT License.
-//  Copyright © 2025 Szabolcs Tóth.
+//  Created by Szabolcs Tóth on 17.10.2025.
+//  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -28,34 +26,40 @@
 import OCIKit
 import SwiftUI
 
-struct PreferencesView: View {
+struct SidebarView: View {
+  // Private properties
+  @Environment(DataViewModel.self) private var vm
+  @Binding var selectedBucket: String?
+
+  // Properties
   var body: some View {
-    content
-  }
+    ZStack {
+      // Background
 
-  @ViewBuilder
-  var content: some View {
-    TabView {
-      PreferencesTab1View()
-        .tabItem {
-          Label("OCI", systemImage: "cloud")
-        }
-
-      PreferencesTab2View()
-        .tabItem {
-          Label("File", systemImage: "document")
-        }
-        
-        PreferencesTab3View()
-          .tabItem {
-            Label("Application", systemImage: "app")
+      // List
+      List(selection: $selectedBucket) {
+          Section("BUCKETS") {
+            ForEach(vm.buckets, id: \.name) { bucket in
+                HStack{
+                    Image("BucketIcon")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                    Text("\(bucket.name)")
+                }
+                .foregroundStyle(Color.text)
+                .bold()
+                .shadow(color: .white.opacity(0.35), radius: 0, x: 1, y: 1)
+            }
           }
+      }
+      .listStyle(SidebarListStyle())
+      .frame(minWidth: 300)
     }
-    .padding(.horizontal, 10)
   }
 }
 
 // MARK: - Preview
 #Preview {
-  PreferencesView()
+    SidebarView(selectedBucket: .constant(nil))
+    .environment(DataViewModel.preview)
 }

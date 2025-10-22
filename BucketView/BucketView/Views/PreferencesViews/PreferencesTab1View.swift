@@ -29,10 +29,6 @@ struct PreferencesTab1View: View {
   // Private Properties
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
-  @AppStorage("etag") private var etag: Bool = false
-  @AppStorage("md5") private var md5: Bool = false
-  @AppStorage("storagetier") private var storageTier: Bool = false
-  @AppStorage("archivalstate") private var archivalState: Bool = false
   @Environment(DataViewModel.self) private var vm
 
   // Properties
@@ -49,47 +45,19 @@ struct PreferencesTab1View: View {
         Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
 
         TextField("CompartmentId:", text: $compartmentId)
-          
+
         // This function hasn't been implemented yet in `PutObject`.
         TextField("PAR bucket (Disabled):", text: $parBucketLink)
       } header: {
         Text("Settings")
       }
-        
-        Button("Set compartment ID") {
-            Task {
-             try await   vm.listBuckets()
-            }
-        }.frame(maxWidth: .infinity)
 
-      Section {
-        Toggle(isOn: $etag) {
-          Text("ETag:")
-        }
-        Toggle(isOn: $md5) {
-          Text("MD5:")
-        }
-        Toggle(isOn: $storageTier) {
-          Text("Storage Tier:")
-        }
-        Toggle(isOn: $archivalState) {
-          Text("Archival State:")
-        }
-      } header: {
-        Text("Additional Fields (Disabled)")
-      }.disabled(true)
-    }.formStyle(.grouped)
-      .tabItem {
-        Label("OCI", systemImage: "cloud")
-      }
-      .task {
-        do {
+      Button("Set compartment ID") {
+        Task {
           try await vm.listBuckets()
         }
-        catch {
-          // TODO: Handle error message here...
-        }
-      }
+      }.frame(maxWidth: .infinity)
+    }.formStyle(.grouped)
   }
 }
 

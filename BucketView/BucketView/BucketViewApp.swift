@@ -56,8 +56,6 @@ struct BucketViewApp: App {
         CheckForUpdatesView(updater: updaterController.updater)
       }
     }
-    .windowStyle(.hiddenTitleBar)
-    .defaultSize(width: 640, height: 480)
     .windowResizability(.contentSize)
     .defaultPosition(.center)
 
