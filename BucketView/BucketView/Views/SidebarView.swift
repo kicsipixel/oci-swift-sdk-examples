@@ -35,18 +35,22 @@ struct SidebarView: View {
   var body: some View {
     ZStack {
       // Background
-     // Color.sidebar.ignoresSafeArea()
 
       // List
       List(selection: $selectedBucket) {
-        Section("BUCKETS") {
-          ForEach(vm.buckets, id: \.name) { bucket in
-            Label("\(bucket.name)", systemImage: "balloon.2.fill")
-              .foregroundStyle(Color.text)
-              .bold()
-              .shadow(color: .white.opacity(0.35), radius: 0, x: 1, y: 1)
+          Section("BUCKETS") {
+            ForEach(vm.buckets, id: \.name) { bucket in
+                HStack{
+                    Image("BucketIcon")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                    Text("\(bucket.name)")
+                }
+                .foregroundStyle(Color.text)
+                .bold()
+                .shadow(color: .white.opacity(0.35), radius: 0, x: 1, y: 1)
+            }
           }
-        }
       }
       .listStyle(SidebarListStyle())
       .frame(minWidth: 300)

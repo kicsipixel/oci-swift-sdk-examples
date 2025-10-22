@@ -26,6 +26,31 @@
 import OCIKit
 import SwiftUI
 
+// MARK: - Object Model for Tree
+struct ObjectNode: Identifiable, Hashable {
+  let id: ObjectSummary.ID
+  let name: String
+  let size: String?
+  let createdAt: String?
+  var children: [ObjectNode]?
+
+  init(id: ObjectSummary.ID, name: String, size: String? = nil, createdAt: String? = nil, children: [ObjectNode]? = nil) {
+    self.id = id
+    self.name = name
+    self.size = size
+    self.createdAt = createdAt
+    self.children = children
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
+  }
+
+  static func == (lhs: ObjectNode, rhs: ObjectNode) -> Bool {
+    lhs.id == rhs.id
+  }
+}
+
 struct Mainscreen: View {
   // Private Properties
   @Environment(DataViewModel.self) private var vm
