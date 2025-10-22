@@ -11,6 +11,11 @@
   <img src="./img/Settings.png" alt="BucketView Settings" width="40%">
 </p>
 
+<p align="center">
+  <img src="./img/BucketViewDark.png" alt="BucketView UI" width="55%">
+  <img src="./img/SettingsDark.png" alt="BucketView Settings" width="40%">
+</p>
+
 ---
 
 ## Setup Instructions
