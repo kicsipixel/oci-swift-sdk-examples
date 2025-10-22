@@ -1,11 +1,9 @@
 //
-//  PreferencesView.swift
+//  PreferencesTab3View.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 03.10.2025.
-//
-//  This file is part of FileLift and is licensed under the MIT License.
-//  Copyright © 2025 Szabolcs Tóth.
+//  Created by Szabolcs Tóth on 10.10.2025.
+//  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -25,37 +23,31 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import OCIKit
 import SwiftUI
 
-struct PreferencesView: View {
+struct PreferencesTab3View: View {
   var body: some View {
     content
   }
 
   @ViewBuilder
   var content: some View {
-    TabView {
-      PreferencesTab1View()
-        .tabItem {
-          Label("OCI", systemImage: "cloud")
+    VStack {
+      Text("BucketView")
+        .bold()
+        .font(.title3)
+        .padding(.top, 40)
+      Form {
+        // Application version and build for easier bug tracking
+        Section {
+          Text("\(Bundle.main.formattedVersion)")
         }
-
-      PreferencesTab2View()
-        .tabItem {
-          Label("File", systemImage: "document")
-        }
-        
-        PreferencesTab3View()
-          .tabItem {
-            Label("Application", systemImage: "app")
-          }
+      }
+      .formStyle(.grouped)
     }
-    .padding(.horizontal, 10)
   }
 }
 
-// MARK: - Preview
 #Preview {
-  PreferencesView()
+  PreferencesTab2View()
 }

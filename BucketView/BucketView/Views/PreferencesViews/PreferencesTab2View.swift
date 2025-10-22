@@ -2,7 +2,7 @@
 //  PreferencesTab2View.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 10.10.2025.
+//  Created by Szabolcs Tóth on 22.10.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,28 +26,45 @@
 import SwiftUI
 
 struct PreferencesTab2View: View {
+  // Private Properties
+  @AppStorage("etag") private var etag: Bool = false
+  @AppStorage("md5") private var md5: Bool = false
+  @AppStorage("storagetier") private var storageTier: Bool = false
+  @AppStorage("archivalstate") private var archivalState: Bool = false
+  @Environment(DataViewModel.self) private var vm
+
+  // Properties
   var body: some View {
     content
   }
 
   @ViewBuilder
   var content: some View {
-    VStack {
-      Text("BucketView")
-        .bold()
-        .font(.title3)
-        .padding(.top, 40)
-      Form {
-        // Application version and build for easier bug tracking
-        Section {
-          Text("\(Bundle.main.formattedVersion)")
+    Form {
+      // OCI Setttings for `namespace`, `compartmentId` and `bucket`
+      // Valid values: `name`, `size`, `etag`, `md5`, `timeCreated`, `timeModified`, `storageTier`, `archivalState`.
+      Section {
+        Toggle(isOn: $etag) {
+          Text("ETag:")
         }
-      }
-      .formStyle(.grouped)
-    }
+        Toggle(isOn: $md5) {
+          Text("MD5:")
+        }
+        Toggle(isOn: $storageTier) {
+          Text("Storage Tier:")
+        }
+        Toggle(isOn: $archivalState) {
+          Text("Archival State:")
+        }
+      } header: {
+        Text("Fields of File to be shown")
+      }.disabled(true)
+    }.formStyle(.grouped)
   }
 }
 
+// MARK: - Preview
 #Preview {
-  PreferencesTab2View()
+  PreferencesTab1View()
+    .environment(DataViewModel.preview)
 }
