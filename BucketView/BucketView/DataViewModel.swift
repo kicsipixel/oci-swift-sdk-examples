@@ -36,6 +36,7 @@ final class DataViewModel {
   var namespace: String = ""
   var buckets = [BucketSummary]()
   var objects = ListObjects(nextStartWith: nil, objects: [], prefixes: nil).objects
+  var isCompartmentIdSet = false
 
   init() throws {
     let env = ProcessInfo.processInfo.environment
@@ -69,7 +70,7 @@ final class DataViewModel {
   // MARK: - Lists buckets in the user given compartment
   // TODO: Error handling is missing.
   func listBuckets() async throws {
-      buckets = []
+    buckets = []
     var compartmentId: String {
       UserDefaults.standard.string(forKey: "compartmentId") ?? ""
     }
@@ -85,20 +86,46 @@ final class DataViewModel {
     // Use the first bucket
     if let firstBucket = buckets.first {
       try await listObjects(bucketName: firstBucket.name)
-    } else {
-        objects = []
+    }
+    else {
+      objects = []
     }
   }
 
   // MARK: - Lists object in the selected bucket
   func listObjects(bucketName: String) async throws {
-      objects = []
+    let defaults = UserDefaults.standard
+    var fields: [Field] = [.name, .size, .timeCreated, .timeModified]
+
+    if defaults.bool(forKey: "etag") {
+      fields.append(.etag)
+    }
+    if defaults.bool(forKey: "md5") {
+      fields.append(.md5)
+    }
+    if defaults.bool(forKey: "storagetier") {
+      fields.append(.storageTier)
+    }
+    if defaults.bool(forKey: "archivalstate") {
+      fields.append(.archivalState)
+    }
+
+    objects = []
     do {
-      objects = try await client.listObjects(namespaceName: namespace, bucketName: bucketName).objects
+      if fields.isEmpty {
+        objects = try await client.listObjects(namespaceName: namespace, bucketName: bucketName).objects
+      }
+      else {
+        objects = try await client.listObjects(namespaceName: namespace, bucketName: bucketName, fields: fields).objects
+      }
     }
     catch {
       // TODO: Handle error message
       print("\(error)")
     }
+  }
+
+  func checkCompartmentId() {
+    isCompartmentIdSet = UserDefaults.standard.string(forKey: "compartmentId")?.isEmpty == true
   }
 }

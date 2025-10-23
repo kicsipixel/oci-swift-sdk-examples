@@ -23,6 +23,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import OCIKit
 import SwiftUI
 
 struct InspectorView: View {
@@ -30,7 +31,7 @@ struct InspectorView: View {
 
   var body: some View {
     VStack(spacing: 20) {
-        Spacer()
+      Spacer()
       if let node {
         Image(node.size != nil ? "FileIcon" : "FolderIcon")
           .resizable()
@@ -40,17 +41,29 @@ struct InspectorView: View {
           .bold()
           .font(.title2)
 
-        Form {
-          Section {
-            VStack(alignment: .leading, spacing: 8) {
-              Text("Name: \(node.name)")
-              Text("Size: \(node.size ?? "")")
-              Text("Created: \(node.createdAt ?? "")")
+          List {
+            Text("Name: ").bold() + Text(node.name)
+            Text("Size: ").bold() + Text(node.size ?? "")
+            Text("Created: ").bold() + Text(node.createdAt ?? "")
+
+            if UserDefaults.standard.bool(forKey: "etag") {
+              Text("ETag: ").bold() + Text(node.etag ?? "")
             }
-          } header: {
-            Text("Details")
+
+            if UserDefaults.standard.bool(forKey: "md5") {
+              Text("MD5: ").bold() + Text(node.md5 ?? "")
+            }
+
+            if UserDefaults.standard.bool(forKey: "storagetier") {
+              Text("Storage Tier: ").bold() + Text(node.storagetier?.rawValue ?? "")
+            }
+
+            if UserDefaults.standard.bool(forKey: "archivalstate") {
+              Text("Archival State: ").bold() + Text(node.archivalstate?.rawValue ?? "")
+            }
           }
-        }
+          .listStyle(.bordered)
+
         .padding(.top, 4)
       }
       else {
@@ -61,7 +74,6 @@ struct InspectorView: View {
       Spacer()
     }
     .padding(.horizontal, 20)
-    .frame(minWidth: 300)
   }
 }
 
