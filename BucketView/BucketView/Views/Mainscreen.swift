@@ -32,13 +32,31 @@ struct ObjectNode: Identifiable, Hashable {
   let name: String
   let size: String?
   let createdAt: String?
+  let etag: String?
+  let md5: String?
+  let storagetier: StorageTier?
+  let archivalstate: ArchivalState?
   var children: [ObjectNode]?
 
-  init(id: ObjectSummary.ID, name: String, size: String? = nil, createdAt: String? = nil, children: [ObjectNode]? = nil) {
+  init(
+    id: ObjectSummary.ID,
+    name: String,
+    size: String? = nil,
+    createdAt: String? = nil,
+    etag: String? = nil,
+    md5: String? = nil,
+    storagetier: StorageTier? = nil,
+    archivalstate: ArchivalState? = nil,
+    children: [ObjectNode]? = nil
+  ) {
     self.id = id
     self.name = name
     self.size = size
     self.createdAt = createdAt
+    self.etag = etag
+    self.md5 = md5
+    self.storagetier = storagetier
+    self.archivalstate = archivalstate
     self.children = children
   }
 
@@ -52,18 +70,17 @@ struct ObjectNode: Identifiable, Hashable {
 }
 
 struct Mainscreen: View {
-  // Private Properties
   @Environment(DataViewModel.self) private var vm
   @State private var isInspectorShown: Bool = false
   @State private var selectedBucket: String? = nil
   @State private var treeObjects: [ObjectNode] = []
   @State private var selectedID: ObjectSummary.ID?
+  @State private var isWizardViewShown = false
 
   private var selectedNode: ObjectNode? {
     findNode(in: treeObjects, matching: selectedID)
   }
 
-  // MARK: - Date Formatter
   private static let dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateFormat = "dd MMM yyyy, HH:mm"
@@ -71,43 +88,49 @@ struct Mainscreen: View {
     return formatter
   }()
 
-  // Properties
   var body: some View {
     NavigationSplitView {
       SidebarView(selectedBucket: $selectedBucket)
     } detail: {
       ZStack {
         VStack {
-            List(selection: $selectedID) {
-                OutlineGroup(treeObjects, children: \.children) { node in
-                    HStack {
-                        Image(node.size?.isEmpty == nil ? "FolderIcon" : "FileIcon")
-                            .resizable()
-                            .frame(width: 30, height: 30)
-                        
-                        Text(node.name)
-                    }
-                    .tag(node.id)
-                }
+          List(selection: $selectedID) {
+            OutlineGroup(treeObjects, children: \.children) { node in
+              HStack {
+                Image(node.size?.isEmpty == nil ? "FolderIcon" : "FileIcon")
+                  .resizable()
+                  .frame(width: 30, height: 30)
+
+                Text(node.name)
+              }
+              .tag(node.id)
             }
-            .listStyle(.inset)
+          }
+          .listStyle(.inset)
           .inspector(isPresented: $isInspectorShown) {
             InspectorView(node: selectedNode)
           }
         }
         .frame(minWidth: 500)
+
+        WizardView(show: $isWizardViewShown)
+          .zIndex(1)
       }
       .task {
+        vm.checkCompartmentId()
         try? await vm.getNamespace()
         try? await vm.listBuckets()
-          treeObjects = buildTree(from: vm.objects)
+        treeObjects = buildTree(from: vm.objects)
       }
       .onChange(of: selectedBucket) { _, newValue in
         guard let bucketName = newValue else { return }
         Task {
           try await vm.listObjects(bucketName: bucketName)
-            treeObjects = buildTree(from: vm.objects)
+          treeObjects = buildTree(from: vm.objects)
         }
+      }
+      .onChange(of: vm.isCompartmentIdSet) { _, newValue in
+        isWizardViewShown = newValue
       }
       .toolbar {
         ToolbarItemGroup(placement: .automatic) {
@@ -119,7 +142,6 @@ struct Mainscreen: View {
     }
   }
 
-  // MARK: - Build hierarchical tree from flat paths
   func buildTree(from rawObjects: [ObjectSummary]) -> [ObjectNode] {
     var root: [String: ObjectNode] = [:]
 
@@ -127,24 +149,37 @@ struct Mainscreen: View {
       let components = obj.name.split(separator: "/").map(String.init)
       let sizeString = obj.size.map { "\($0) bytes" }
       let createdString = obj.timeCreated.map { Self.dateFormatter.string(from: $0) }
-      insertNode(into: &root, components: components, id: obj.id, size: sizeString, createdAt: createdString)
+      insertNode(
+        into: &root,
+        components: components,
+        id: obj.id,
+        size: sizeString,
+        createdAt: createdString,
+        etag: obj.etag,
+        md5: obj.md5,
+        storagetier: obj.storageTier,
+        archivalstate: obj.archivalState
+      )
     }
 
     return Array(root.values).sorted(by: { $0.name < $1.name })
   }
 
-  // Recursive insertion
   private func insertNode(
     into dict: inout [String: ObjectNode],
     components: [String],
     id: ObjectSummary.ID,
     size: String?,
-    createdAt: String?
+    createdAt: String?,
+    etag: String?,
+    md5: String?,
+    storagetier: StorageTier?,
+    archivalstate: ArchivalState?
   ) {
     guard let first = components.first else { return }
 
     if components.count == 1 {
-      dict[first] = ObjectNode(id: id, name: first, size: size, createdAt: createdAt, children: nil)
+      dict[first] = ObjectNode(id: id, name: first, size: size, createdAt: createdAt, etag: etag, md5: md5, storagetier: storagetier, archivalstate: archivalstate, children: nil)
     }
     else {
       if dict[first] == nil {
@@ -158,7 +193,7 @@ struct Mainscreen: View {
         }
       }
 
-      insertNode(into: &childDict, components: Array(components.dropFirst()), id: id, size: size, createdAt: createdAt)
+      insertNode(into: &childDict, components: Array(components.dropFirst()), id: id, size: size, createdAt: createdAt, etag: etag, md5: md5, storagetier: storagetier, archivalstate: archivalstate)
       dict[first]?.children = Array(childDict.values).sorted(by: { $0.name < $1.name })
     }
   }
@@ -179,13 +214,12 @@ struct Mainscreen: View {
 
 // MARK: - Preview
 #Preview("Light Mode") {
-    Mainscreen()
-        .environment(DataViewModel.preview)
+  Mainscreen()
+    .environment(DataViewModel.preview)
 }
 
 #Preview("Dark Mode") {
-    Mainscreen()
-        .environment(DataViewModel.preview)
-        .preferredColorScheme(.dark)
+  Mainscreen()
+    .environment(DataViewModel.preview)
+    .preferredColorScheme(.dark)
 }
-

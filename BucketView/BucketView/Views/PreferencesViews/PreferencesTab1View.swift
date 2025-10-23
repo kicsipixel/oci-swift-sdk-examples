@@ -42,7 +42,7 @@ struct PreferencesTab1View: View {
       // OCI Setttings for `namespace`, `compartmentId` and `bucket`
       // Valid values: `name`, `size`, `etag`, `md5`, `timeCreated`, `timeModified`, `storageTier`, `archivalState`.
       Section {
-        Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
+        Text("Namespace: \(vm.namespace)")
 
         TextField("CompartmentId:", text: $compartmentId)
 
@@ -54,10 +54,13 @@ struct PreferencesTab1View: View {
 
       Button("Set compartment ID") {
         Task {
+          vm.checkCompartmentId()
           try await vm.listBuckets()
         }
-      }.frame(maxWidth: .infinity)
-    }.formStyle(.grouped)
+      }
+      .frame(maxWidth: .infinity)
+    }
+    .formStyle(.grouped)
   }
 }
 

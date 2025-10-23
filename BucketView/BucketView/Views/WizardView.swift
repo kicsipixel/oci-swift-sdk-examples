@@ -1,8 +1,8 @@
 //
-//  PreferencesTab2View.swift
+//  WizardView.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 22.10.2025.
+//  Created by Szabolcs Tóth on 23.10.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,44 +25,67 @@
 
 import SwiftUI
 
-struct PreferencesTab2View: View {
+struct WizardView: View {
   // Private Properties
+  @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("etag") private var etag: Bool = false
   @AppStorage("md5") private var md5: Bool = false
   @AppStorage("storagetier") private var storageTier: Bool = false
   @AppStorage("archivalstate") private var archivalState: Bool = false
+  @Environment(DataViewModel.self) private var vm
 
   // Properties
-  var body: some View {
-    content
-  }
+  @Binding var show: Bool
 
-  @ViewBuilder
-  var content: some View {
-    Form {
-      // OCI Setttings for `namespace`, `compartmentId` and `bucket`
-      // Valid values: `name`, `size`, `etag`, `md5`, `timeCreated`, `timeModified`, `storageTier`, `archivalState`.
-      Section {
-        Toggle(isOn: $etag) {
-          Text("ETag:")
+  var body: some View {
+    GeometryReader { geometry in
+      VStack {
+        Form {
+          Section {
+            TextField("CompartmentId:", text: $compartmentId)
+          } header: {
+            Text("Compartment")
+          }
+
+          Section {
+            Toggle(isOn: $etag) {
+              Text("ETag:")
+            }
+            Toggle(isOn: $md5) {
+              Text("MD5:")
+            }
+            Toggle(isOn: $storageTier) {
+              Text("Storage Tier:")
+            }
+            Toggle(isOn: $archivalState) {
+              Text("Archival State:")
+            }
+          } header: {
+            Text("Files")
+          }
+
+          Button("Set") {
+            withAnimation(.easeInOut(duration: 0.6)) {
+              //     show = false
+              vm.checkCompartmentId()
+              Task {
+                try await vm.listBuckets()
+              }
+            }
+          }.frame(maxWidth: .infinity)
         }
-        Toggle(isOn: $md5) {
-          Text("MD5:")
-        }
-        Toggle(isOn: $storageTier) {
-          Text("Storage Tier:")
-        }
-        Toggle(isOn: $archivalState) {
-          Text("Archival State:")
-        }
-      } header: {
-        Text("Fields of File to be shown")
+        .formStyle(.grouped)
       }
-    }.formStyle(.grouped)
+      .padding(30)
+      .frame(width: geometry.size.width, height: geometry.size.height)
+      .background(Color.wizard)
+      .offset(x: show ? 0 : geometry.size.width)
+      .animation(.easeInOut(duration: 0.9), value: show)
+    }
   }
 }
 
-// MARK: - Preview
 #Preview {
-  PreferencesTab1View()
+  WizardView(show: .constant(true))
+    .environment(DataViewModel.preview)
 }
