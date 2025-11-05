@@ -1,5 +1,5 @@
 {
-  "originHash" : "bffcd3b5b554f0054cd75eb0dcc56d536106da00ad5c3e83a0d465ddccdfe7e5",
+  "originHash" : "fe0c7c71ba61185221ff96d8ab13b1d257669bc09ac44ced7aceac8e09f00990",
   "pins" : [
     {
       "identity" : "oci-swift-sdk",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/iliasaz/oci-swift-sdk",
       "state" : {
         "branch" : "main",
-        "revision" : "a63988caef118ca1ce55dd03ccf0f4f1628593f1"
+        "revision" : "0b5677f40afe14969cbb18266e38097f301a3c67"
       }
     },
     {
@@ -20,12 +20,21 @@
       }
     },
     {
+      "identity" : "sparkle",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sparkle-project/Sparkle",
+      "state" : {
+        "revision" : "9a1d2a19d3595fcf8d9c447173f9a1687b3dcadb",
+        "version" : "2.8.0"
+      }
+    },
+    {
       "identity" : "swift-asn1",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "f70225981241859eb4aa1a18a75531d26637c8cc",
-        "version" : "1.4.0"
+        "revision" : "40d25bbb2fc5b557a9aa8512210bded327c0f60d",
+        "version" : "1.5.0"
       }
     },
     {

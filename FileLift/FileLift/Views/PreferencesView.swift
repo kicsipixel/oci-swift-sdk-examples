@@ -77,6 +77,17 @@ struct PreferencesView: View {
 
           // This function hasn't been implemented yet in `PutObject`.
           TextField("PAR bucket (Disabled):", text: $parBucketLink)
+
+          Button {
+            Task {
+              try await vm.getNamespace()
+                try await vm.listBuckets()
+            }
+          } label: {
+            Text("Save settings")
+          }
+          .frame(maxWidth: .infinity)
+
         } header: {
           Text("OCI Settings")
         }
@@ -93,7 +104,7 @@ struct PreferencesView: View {
             try await vm.listBuckets()
           }
           catch {
-            // TODO: Handle error message here...
+            print("Error happened: \(error.localizedDescription)")
           }
         }
     }

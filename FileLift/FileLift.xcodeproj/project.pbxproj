@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		5734A9C72E903F8D00B6F8B3 /* OCIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5734A9C62E903F8D00B6F8B3 /* OCIKit */; };
+		5775AD702EB7D5460014BC3F /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 5775AD6F2EB7D5460014BC3F /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5734A9C72E903F8D00B6F8B3 /* OCIKit in Frameworks */,
+				5775AD702EB7D5460014BC3F /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			name = FileLift;
 			packageProductDependencies = (
 				5734A9C62E903F8D00B6F8B3 /* OCIKit */,
+				5775AD6F2EB7D5460014BC3F /* Sparkle */,
 			);
 			productName = FileLift;
 			productReference = 5734A9B72E903E8A00B6F8B3 /* FileLift.app */;
@@ -102,6 +105,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				5734A9C52E903F8D00B6F8B3 /* XCRemoteSwiftPackageReference "oci-swift-sdk" */,
+				5775AD6E2EB7D5460014BC3F /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5734A9B82E903E8A00B6F8B3 /* Products */;
@@ -261,19 +265,20 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20251009;
+				CURRENT_PROJECT_VERSION = 202511105;
 				DEVELOPMENT_TEAM = V46824PR8F;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FileLift/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.103;
+				MARKETING_VERSION = 0.203;
 				PRODUCT_BUNDLE_IDENTIFIER = hu.purzelbaum.FileLift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -293,19 +298,20 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20251009;
+				CURRENT_PROJECT_VERSION = 202511105;
 				DEVELOPMENT_TEAM = V46824PR8F;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FileLift/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.103;
+				MARKETING_VERSION = 0.203;
 				PRODUCT_BUNDLE_IDENTIFIER = hu.purzelbaum.FileLift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -350,6 +356,14 @@
 				kind = branch;
 			};
 		};
+		5775AD6E2EB7D5460014BC3F /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -357,6 +371,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5734A9C52E903F8D00B6F8B3 /* XCRemoteSwiftPackageReference "oci-swift-sdk" */;
 			productName = OCIKit;
+		};
+		5775AD6F2EB7D5460014BC3F /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5775AD6E2EB7D5460014BC3F /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

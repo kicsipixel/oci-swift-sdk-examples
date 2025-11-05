@@ -73,13 +73,18 @@ final class DataViewModel {
     var compartmentId: String {
       UserDefaults.standard.string(forKey: "compartmentId") ?? ""
     }
-    buckets =
-      try await client
-      .listBuckets(
-        namespaceName:
-          namespace,
-        compartmentId: compartmentId
-      )
+      do {
+          buckets =
+          try await client
+              .listBuckets(
+                namespaceName:
+                    namespace,
+                compartmentId: compartmentId
+              )
+      } catch {
+          print(error.localizedDescription)
+      }
+      
   }
 
   // MARK: - Pusts object/file into the bucket
@@ -89,8 +94,14 @@ final class DataViewModel {
 
     isUploading = true
     defer { isUploading = false }
-
-    let url = URL(fileURLWithPath: filePath)
+      
+      let url = URL(fileURLWithPath: filePath)
+      
+print(namespace)
+   print(UserDefaults.standard.string(forKey: "selection")!)
+      print("\(url.lastPathComponent)")
+      
+   
     let fileData = try Data(contentsOf: url)
     try await client.putObject(
       namespaceName: namespace,
