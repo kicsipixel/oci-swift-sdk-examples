@@ -73,35 +73,27 @@ final class DataViewModel {
     var compartmentId: String {
       UserDefaults.standard.string(forKey: "compartmentId") ?? ""
     }
-      do {
-          buckets =
-          try await client
-              .listBuckets(
-                namespaceName:
-                    namespace,
-                compartmentId: compartmentId
-              )
-      } catch {
-          print(error.localizedDescription)
-      }
-      
+    do {
+      buckets =
+        try await client
+        .listBuckets(
+          namespaceName:
+            namespace,
+          compartmentId: compartmentId
+        )
+    }
+    catch {
+      print(error.localizedDescription)
+    }
   }
 
   // MARK: - Pusts object/file into the bucket
   // TODO: Possible errors are not handled at all. Force unwrapping.
   func putObject(filePath: String) async throws {
-    let confirmationIsNeeded = !UserDefaults.standard.bool(forKey: "autoUpload")
-
     isUploading = true
     defer { isUploading = false }
-      
-      let url = URL(fileURLWithPath: filePath)
-      
-print(namespace)
-   print(UserDefaults.standard.string(forKey: "selection")!)
-      print("\(url.lastPathComponent)")
-      
-   
+
+    let url = URL(fileURLWithPath: filePath)
     let fileData = try Data(contentsOf: url)
     try await client.putObject(
       namespaceName: namespace,

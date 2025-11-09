@@ -80,8 +80,17 @@ struct PreferencesView: View {
 
           Button {
             Task {
-              try await vm.getNamespace()
-                try await vm.listBuckets()
+                do {
+                    try await vm.getNamespace()
+                }  catch {
+                        print("Error happened: \(error.localizedDescription)")
+                    }
+                    
+                    do {
+                        try await vm.listBuckets()
+                    } catch {
+                        print("Error happened: \(error.localizedDescription)")
+                    }
             }
           } label: {
             Text("Save settings")

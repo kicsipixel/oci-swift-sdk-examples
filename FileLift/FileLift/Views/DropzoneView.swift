@@ -29,30 +29,36 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct DropzoneView: View {
-  // Private properties
   @Environment(DataViewModel.self) private var vm
   @State private var isDropActive = false
   @State private var dropzoneWidth: CGFloat = 340
   @State private var dropzoneHeight: CGFloat = 200
-  @State private var pendingUploadPath: String?
+  @State private var pendingUploadPaths: [String] = []
   @State private var showingConfirmation = false
 
   var body: some View {
     content
       .alert("Confirmation", isPresented: $showingConfirmation) {
         Button("OK", role: .destructive) {
-          if let path = pendingUploadPath {
-            Task {
+          Task {
+            for path in pendingUploadPaths {
               try? await vm.putObject(filePath: path)
-              pendingUploadPath = nil
             }
+            pendingUploadPaths.removeAll()
           }
         }
         Button("Cancel", role: .cancel) {
-          pendingUploadPath = nil
+          pendingUploadPaths.removeAll()
         }
       } message: {
-        Text("Are you sure you want to upload this file?")
+        Text(
+          pendingUploadPaths.count == 1
+            ? "Do you want to upload\n \(pendingUploadPaths.first ?? "")?"
+            : """
+            Do you want to upload these \(pendingUploadPaths.count) files:
+            \(pendingUploadPaths.map { $0.split(separator: "/").last ?? "" }.joined(separator: "\n"))
+            """
+        )
       }
   }
 
@@ -61,11 +67,18 @@ struct DropzoneView: View {
     BackgroundView(width: dropzoneWidth, height: dropzoneHeight)
       .animation(.easeInOut(duration: 0.2), value: dropzoneHeight)
       .onDrop(of: [.fileURL], isTargeted: $isDropActive) { providers, _ in
+        var collectedPaths: [String] = []
+        let group = DispatchGroup()
+
         for provider in providers {
+          group.enter()
           _ = provider.loadDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier) { data, _ in
+            defer { group.leave() }
+
             guard let data,
-                  let url = URL(dataRepresentation: data, relativeTo: nil),
-                  url.isFileURL else { return }
+              let url = URL(dataRepresentation: data, relativeTo: nil),
+              url.isFileURL
+            else { return }
 
             var isDirectory: ObjCBool = false
             FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
@@ -74,22 +87,27 @@ struct DropzoneView: View {
               return
             }
 
-            let confirmationIsNeeded = !UserDefaults.standard.bool(forKey: "autoUpload")
-
-            if confirmationIsNeeded {
-              DispatchQueue.main.async {
-                pendingUploadPath = url.path
-                showingConfirmation = true
-              }
-            } else {
-              Task {
-                try? await vm.putObject(filePath: url.path)
-              }
-            }
-
+            collectedPaths.append(url.path)
             print("Dropped file name: \(url.lastPathComponent)")
           }
         }
+
+        group.notify(queue: .main) {
+          let confirmationIsNeeded = !UserDefaults.standard.bool(forKey: "autoUpload")
+
+          if confirmationIsNeeded {
+            pendingUploadPaths = collectedPaths
+            showingConfirmation = true
+          }
+          else {
+            Task {
+              for path in collectedPaths {
+                try? await vm.putObject(filePath: path)
+              }
+            }
+          }
+        }
+
         return true
       }
       .onChange(of: isDropActive) { _, newValue in
