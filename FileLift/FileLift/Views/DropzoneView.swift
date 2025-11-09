@@ -88,7 +88,6 @@ struct DropzoneView: View {
             }
 
             collectedPaths.append(url.path)
-            print("Dropped file name: \(url.lastPathComponent)")
           }
         }
 
