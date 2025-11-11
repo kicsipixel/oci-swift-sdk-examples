@@ -33,15 +33,17 @@ struct FileLiftApp: App {
   // Private Properties
   private let updaterController: SPUStandardUpdaterController
   // Properties
-  let dataViewModel: DataViewModel
+  let dataViewModel: DataViewModelProtocol
 
   init() {
     updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-    do {
-      dataViewModel = try DataViewModel()
+
+    if let model = DataViewModel() {
+      dataViewModel = model
     }
-    catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
+    else {
+      print("⚠️ DataViewModel is unavailable. Some features may be disabled.")
+      dataViewModel = MockDataViewModel()
     }
   }
 
@@ -49,7 +51,7 @@ struct FileLiftApp: App {
     // Mainscreen
     WindowGroup {
       Mainscreen()
-        .environment(dataViewModel)
+            .environment(\.dataViewModel, dataViewModel)
     }
     .commands {
       CommandGroup(after: .appInfo) {
@@ -62,7 +64,7 @@ struct FileLiftApp: App {
     // Preferences
     Settings {
       PreferencesView()
-        .environment(dataViewModel)
+            .environment(\.dataViewModel, dataViewModel)
         .frame(width: 400, height: 480)
     }
   }

@@ -1,0 +1,56 @@
+//
+//  MockDataViewModel.swift
+//  FileLift
+//
+//  Created by Szabolcs Tóth on 11.11.2025.
+//  Copyright © 2025 Szabolcs Tóth
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
+
+import OCIKit
+import SwiftUI
+
+@Observable @MainActor
+final class MockDataViewModel: DataViewModelProtocol {
+  var namespace: String = "DEMONAMESPACE"
+  var buckets: [BucketSummary] = [
+    BucketSummary(compartmentId: "DEMOCOMPARTMENTID", createdBy: "DEMO", etag: "DEMOETAG", name: "DEMOBUCKET", namespace: "DEMO", timeCreatedRaw: "2025-11-11T12:34:56.789Z")
+  ]
+  var isUploading: Bool = false
+  var uploadSuccessMessage: String? = nil
+
+  func getNamespace() async throws {
+    // No-op or log
+  }
+
+  func listBuckets() async throws {
+    // No-op or log
+  }
+
+  func putObject(filePath: String) async throws {
+    showUploadSuccessMessage("DEMO - Pretended to upload \(filePath)")
+  }
+
+  func showUploadSuccessMessage(_ text: String) {
+    uploadSuccessMessage = text
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+      self.uploadSuccessMessage = nil
+    }
+  }
+}

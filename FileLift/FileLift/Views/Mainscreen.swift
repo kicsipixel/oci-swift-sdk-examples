@@ -30,7 +30,7 @@ import SwiftUI
 
 struct Mainscreen: View {
   // MARK: - Private Properties
-  @Environment(DataViewModel.self) private var vm
+  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
   @State private var showingAlert: Bool = false
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @State private var errorMessage: String = ""
@@ -52,8 +52,6 @@ struct Mainscreen: View {
       } message: {
         Text(errorMessage)
       }
-      // Confirmation
-
   }
 
   @ViewBuilder
@@ -78,6 +76,12 @@ struct Mainscreen: View {
         )
         .bold()
         .foregroundStyle(.accent)
+
+        Text("DEMO MODE - config file is missing...")
+          .opacity(vm.namespace == "DEMONAMESPACE" ? 1 : 0)
+          .foregroundStyle(.accent)
+          .font(.caption.bold())
+          .padding(.top, 10)
       }
 
       ProgressView(label: {
@@ -110,5 +114,5 @@ struct Mainscreen: View {
 // MARK: - Preview
 #Preview {
   Mainscreen()
-    .environment(DataViewModel.preview)
+    .environment(DataViewModel())
 }

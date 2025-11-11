@@ -29,10 +29,10 @@ import OCIKit
 import SwiftUI
 
 struct PreferencesView: View {
+  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
   @AppStorage("autoUpload") private var autoUpload = true
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
-  @Environment(DataViewModel.self) private var vm
   @AppStorage("selection") private var selection = ""
 
   var body: some View {
@@ -80,17 +80,19 @@ struct PreferencesView: View {
 
           Button {
             Task {
-                do {
-                    try await vm.getNamespace()
-                }  catch {
-                        print("Error happened: \(error.localizedDescription)")
-                    }
-                    
-                    do {
-                        try await vm.listBuckets()
-                    } catch {
-                        print("Error happened: \(error.localizedDescription)")
-                    }
+              do {
+                try await vm.getNamespace()
+              }
+              catch {
+                print("Error happened: \(error.localizedDescription)")
+              }
+
+              do {
+                try await vm.listBuckets()
+              }
+              catch {
+                print("Error happened: \(error.localizedDescription)")
+              }
             }
           } label: {
             Text("Save settings")
@@ -124,5 +126,5 @@ struct PreferencesView: View {
 // MARK: - Preview
 #Preview {
   PreferencesView()
-    .environment(DataViewModel.preview)
+    .environment(DataViewModel())
 }

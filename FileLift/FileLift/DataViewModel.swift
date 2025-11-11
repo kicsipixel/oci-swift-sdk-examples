@@ -28,8 +28,21 @@
 import OCIKit
 import SwiftUI
 
+protocol DataViewModelProtocol: Observable {
+  var namespace: String { get set }
+  var buckets: [BucketSummary] { get set }
+  var isUploading: Bool { get set }
+  var uploadSuccessMessage: String? { get set }
+
+  func getNamespace() async throws
+  func listBuckets() async throws
+  func putObject(filePath: String) async throws
+  func showUploadSuccessMessage(_ text: String)
+}
+
+
 @Observable @MainActor
-final class DataViewModel {
+final class DataViewModel: DataViewModelProtocol {
   // Properties
   let client: ObjectStorageClient
   var namespace: String = ""
@@ -38,29 +51,20 @@ final class DataViewModel {
   var uploadSuccessMessage: String? = nil
 
   // MARK: - Initializer
-  init() throws {
-    let env = ProcessInfo.processInfo.environment
-    let ociConfigFilePath =
-      env["OCI_CONFIG_FILE"] ?? "\(NSHomeDirectory())/.oci/config"
-    let ociProfileName = env["OCI_PROFILE"] ?? "DEFAULT"
-    let regionId = try extractUserRegion(
-      from: ociConfigFilePath,
-      profile: ociProfileName
-    )
-    let region = Region.from(regionId: regionId ?? "") ?? .iad
-    let signer = try APIKeySigner(
-      configFilePath: ociConfigFilePath,
-      configName: ociProfileName
-    )
-    client = try ObjectStorageClient(region: region, signer: signer)
-  }
-
-  // A non-throwing mock initializer or static property for preview purposes.
-  static var preview: DataViewModel {
-    let mock = try! DataViewModel()
-    // optionally stub any values here
-    return mock
-  }
+    init?() {
+        do {
+          let env = ProcessInfo.processInfo.environment
+          let ociConfigFilePath = env["OCI_CONFIG_FILE"] ?? "\(NSHomeDirectory())/.oci/config"
+          let ociProfileName = env["OCI_PROFILE"] ?? "DEFAULT"
+          let regionId = try extractUserRegion(from: ociConfigFilePath, profile: ociProfileName)
+          let region = Region.from(regionId: regionId ?? "") ?? .iad
+          let signer = try APIKeySigner(configFilePath: ociConfigFilePath, configName: ociProfileName)
+          self.client = try ObjectStorageClient(region: region, signer: signer)
+        } catch {
+          print("⚠️ Failed to initialize ObjectStorageClient: \(error)")
+          return nil
+        }
+      }
 
   // MARK: - Gets namespace of the user's object storage
   func getNamespace() async throws {
@@ -111,5 +115,16 @@ final class DataViewModel {
     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
       self.uploadSuccessMessage = nil
     }
+  }
+}
+
+private struct DataViewModelKey: EnvironmentKey {
+  static let defaultValue: DataViewModelProtocol = MockDataViewModel()
+}
+
+extension EnvironmentValues {
+  var dataViewModel: DataViewModelProtocol {
+    get { self[DataViewModelKey.self] }
+    set { self[DataViewModelKey.self] = newValue }
   }
 }
