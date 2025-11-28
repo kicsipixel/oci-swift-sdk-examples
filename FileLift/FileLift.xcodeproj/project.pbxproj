@@ -299,7 +299,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.312;
+				MARKETING_VERSION = 0.313;
 				PRODUCT_BUNDLE_IDENTIFIER = hu.purzelbaum.FileLift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -333,7 +333,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.312;
+				MARKETING_VERSION = 0.313;
 				PRODUCT_BUNDLE_IDENTIFIER = hu.purzelbaum.FileLift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

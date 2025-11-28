@@ -40,7 +40,6 @@ protocol DataViewModelProtocol: Observable {
   func showUploadSuccessMessage(_ text: String)
 }
 
-
 @Observable @MainActor
 final class DataViewModel: DataViewModelProtocol {
   // Properties
@@ -51,20 +50,21 @@ final class DataViewModel: DataViewModelProtocol {
   var uploadSuccessMessage: String? = nil
 
   // MARK: - Initializer
-    init?() {
-        do {
-          let env = ProcessInfo.processInfo.environment
-          let ociConfigFilePath = env["OCI_CONFIG_FILE"] ?? "\(NSHomeDirectory())/.oci/config"
-          let ociProfileName = env["OCI_PROFILE"] ?? "DEFAULT"
-          let regionId = try extractUserRegion(from: ociConfigFilePath, profile: ociProfileName)
-          let region = Region.from(regionId: regionId ?? "") ?? .iad
-          let signer = try APIKeySigner(configFilePath: ociConfigFilePath, configName: ociProfileName)
-          self.client = try ObjectStorageClient(region: region, signer: signer)
-        } catch {
-          print("⚠️ Failed to initialize ObjectStorageClient: \(error)")
-          return nil
-        }
-      }
+  init?() {
+    do {
+      let env = ProcessInfo.processInfo.environment
+      let ociConfigFilePath = env["OCI_CONFIG_FILE"] ?? "\(NSHomeDirectory())/.oci/config"
+      let ociProfileName = env["OCI_PROFILE"] ?? "DEFAULT"
+      let regionId = try extractUserRegion(from: ociConfigFilePath, profile: ociProfileName)
+      let region = Region.from(regionId: regionId ?? "") ?? .iad
+      let signer = try APIKeySigner(configFilePath: ociConfigFilePath, configName: ociProfileName)
+      self.client = try ObjectStorageClient(region: region, signer: signer)
+    }
+    catch {
+      print("⚠️ Failed to initialize ObjectStorageClient: \(error)")
+      return nil
+    }
+  }
 
   // MARK: - Gets namespace of the user's object storage
   func getNamespace() async throws {
@@ -77,18 +77,11 @@ final class DataViewModel: DataViewModelProtocol {
     var compartmentId: String {
       UserDefaults.standard.string(forKey: "compartmentId") ?? ""
     }
-    do {
-      buckets =
-        try await client
-        .listBuckets(
-          namespaceName:
-            namespace,
-          compartmentId: compartmentId
-        )
-    }
-    catch {
-      print(error.localizedDescription)
-    }
+
+    buckets = try await client.listBuckets(
+      namespaceName: namespace,
+      compartmentId: compartmentId
+    )
   }
 
   // MARK: - Pusts object/file into the bucket

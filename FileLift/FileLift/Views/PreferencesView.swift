@@ -34,9 +34,17 @@ struct PreferencesView: View {
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
   @AppStorage("selection") private var selection = ""
+  @State private var showingAlert: Bool = false
+  @State private var errorMessage: String = ""
 
   var body: some View {
     content
+      // Error
+      .alert("Error happened", isPresented: $showingAlert) {
+        Button("Got it!", role: .cancel) {}
+      } message: {
+        Text(errorMessage)
+      }
   }
 
   @ViewBuilder
@@ -80,19 +88,8 @@ struct PreferencesView: View {
 
           Button {
             Task {
-              do {
-                try await vm.getNamespace()
-              }
-              catch {
-                print("Error happened: \(error.localizedDescription)")
-              }
-
-              do {
-                try await vm.listBuckets()
-              }
-              catch {
-                print("Error happened: \(error.localizedDescription)")
-              }
+              try await self.getNamespace()
+              try await self.listBuckets()
             }
           } label: {
             Text("Save settings")
@@ -111,15 +108,31 @@ struct PreferencesView: View {
         }
       }.formStyle(.grouped)
         .task {
-          do {
-            try await vm.listBuckets()
-          }
-          catch {
-            print("Error happened: \(error.localizedDescription)")
-          }
+          Task { try await self.listBuckets() }
         }
     }
     .padding(.horizontal, 10)
+  }
+
+  // MARK: - Functions
+  private func listBuckets() async throws {
+    do {
+      try await vm.getNamespace()
+    }
+    catch {
+      errorMessage = error.localizedDescription
+      showingAlert = true
+    }
+  }
+
+  private func getNamespace() async throws {
+    do {
+      try await vm.listBuckets()
+    }
+    catch {
+      errorMessage = error.localizedDescription
+      showingAlert = true
+    }
   }
 }
 

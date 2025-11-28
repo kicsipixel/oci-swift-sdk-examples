@@ -31,8 +31,8 @@ import SwiftUI
 struct Mainscreen: View {
   // MARK: - Private Properties
   @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
-  @State private var showingAlert: Bool = false
   @AppStorage("compartmentId") private var compartmentId: String = ""
+  @State private var showingAlert: Bool = false
   @State private var errorMessage: String = ""
 
   var body: some View {
