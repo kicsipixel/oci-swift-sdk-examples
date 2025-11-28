@@ -72,7 +72,7 @@ struct Mainscreen: View {
         Text(
           compartmentId.isEmpty
             ? "You need to set your compartmentId first."
-            : "Drop your file here to upload."
+            : "Drop your file(s) here to upload."
         )
         .bold()
         .foregroundStyle(.accent)
