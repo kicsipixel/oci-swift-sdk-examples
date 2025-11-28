@@ -33,8 +33,9 @@ struct MainPreferencesView: View {
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
   @AppStorage("selection") private var selection = ""
-  @State private var showingAlert: Bool = false
-  @State private var errorMessage: String = ""
+  @State private var showingAlert = false
+  @State private var errorMessage = ""
+  @State private var parBucket = false
 
   // Properties
   var body: some View {
@@ -49,58 +50,54 @@ struct MainPreferencesView: View {
 
   @ViewBuilder
   var content: some View {
-    Form {
-      // Autoupload - no need confirmation for uploading
-      AutouploadView(autoUpload: $autoUpload)
+    VStack {
+      Form {
+        // Autoupload - no need confirmation for uploading
+        AutouploadView(autoUpload: $autoUpload)
 
-      // OCI Setttings for `namespace`, `compartmentId` and `bucket`
-      Section {
-        Text("Namespace: \(vm.namespace.replacingOccurrences(of: "\"", with: ""))")
+        Section {
+          Toggle("PAR Link", isOn: $parBucket)
+          ZStack {
+            // OCI Setttings for `namespace`, `compartmentId` and `bucket`
+            OCISettingView(compartmentId: $compartmentId, selection: $selection, nameSpace: vm.namespace, buckets: vm.buckets)
+              .tabItem {
+                Text("Namespace")
+              }
+              .opacity(parBucket ? 0 : 1)
+              .animation(.easeInOut(duration: 0.9), value: parBucket)
 
-        TextField("CompartmentId:", text: $compartmentId)
-
-        Picker("Select a bucket:", selection: $selection) {
-          ForEach(vm.buckets, id: \.name) { bucket in
-            Text(bucket.name)
+            // This function hasn't been implemented yet in `PutObject`.
+            PARBucketSettings(parBucketLink: $parBucketLink)
+              .tabItem {
+                Text("PAR bucket")
+              }
+              .opacity(parBucket ? 1 : 0)
+              .animation(.easeInOut(duration: 0.9), value: parBucket)
           }
-        }
 
-        HStack {
-          Rectangle()
-            .fill(Color.accent)
-            .frame(width: 140, height: 1)
-
-          Text("OR")
-            .foregroundStyle(.accent)
-
-          Rectangle()
-            .fill(Color.accent)
-            .frame(width: 140, height: 1)
-        }
-
-        // This function hasn't been implemented yet in `PutObject`.
-        TextField("PAR bucket (Disabled):", text: $parBucketLink)
-
-        Button {
-          Task {
-            try await self.getNamespace()
-            try await self.listBuckets()
+          Button {
+            Task {
+              try await self.getNamespace()
+              try await self.listBuckets()
+            }
+          } label: {
+            Text("Save settings")
           }
-        } label: {
-          Text("Save settings")
+          .frame(maxWidth: .infinity)
+
+        } header: {
+          Text("OCI Settings")
         }
-        .frame(maxWidth: .infinity)
 
-      } header: {
-        Text("OCI Settings")
-      }
+      }.formStyle(.grouped)
+        .task {
+          Task { try await self.listBuckets() }
+        }
+        .padding(.horizontal, 10)
 
-    }.formStyle(.grouped)
-      .task {
-        Task { try await self.listBuckets() }
-      }
-      .padding(.horizontal, 10)
+    }
   }
+
   // MARK: - Functions
   private func listBuckets() async throws {
     do {

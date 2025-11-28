@@ -1,11 +1,9 @@
 //
-//  PreferencesView.swift
+//  OCISettingView.swift
 //  FileLift
 //
-//  Created by Szabolcs Tóth on 03.10.2025.
-//
-//  This file is part of FileLift and is licensed under the MIT License.
-//  Copyright © 2025 Szabolcs Tóth.
+//  Created by Szabolcs Tóth on 28.11.2025.
+//  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -24,36 +22,40 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
+    
 
+import OCIKit
 import SwiftUI
 
-struct PreferencesView: View {
-@State private var pickerSelection: String = "A"
+struct OCISettingView: View {
+    // Private Properties
+    // Properties
+    @Binding var compartmentId: String
+    @Binding var selection: String
+    let nameSpace: String
+    let buckets: [BucketSummary]
     
-  // Properties
-  var body: some View {
-    content
-  }
-
-  @ViewBuilder
-  var content: some View {
-    TabView {
-      // Main tab
-      MainPreferencesView()
-        .tabItem {
-          Label("OCI", systemImage: "cloud")
-        }
-
-      // About tab
-      AboutPreferencesView()
-        .tabItem {
-          Label("Application", systemImage: "app")
+    var body: some View {
+        content
+    }
+    
+    @ViewBuilder
+    var content: some View {
+        VStack(alignment: .leading) {
+            Text("Namespace: \(nameSpace)")
+            
+            TextField("CompartmentId:", text: $compartmentId)
+            
+            Picker("Select a bucket:", selection: $selection) {
+                ForEach(buckets, id: \.name) { bucket in
+                    Text(bucket.name)
+                }
+            }
         }
     }
-  }
 }
 
-// MARK: - Preview
+// MARK: - protocol
 #Preview {
-  PreferencesView()
+    OCISettingView(compartmentId: .constant("oci.aapppall"), selection: .constant(""), nameSpace: "jdgfyyrhhrr", buckets: [])
 }

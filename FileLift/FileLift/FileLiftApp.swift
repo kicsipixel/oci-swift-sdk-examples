@@ -65,7 +65,7 @@ struct FileLiftApp: App {
     Settings {
       PreferencesView()
             .environment(\.dataViewModel, dataViewModel)
-        .frame(width: 400, height: 380)
+        .frame(width: 400, height: 330)
     }
   }
 }
