@@ -76,6 +76,8 @@ struct Mainscreen: View {
   @State private var treeObjects: [ObjectNode] = []
   @State private var selectedID: ObjectSummary.ID?
   @State private var isWizardViewShown = false
+  @State private var showingAlert: Bool = false
+  @State private var errorMessage: String = ""
 
   private var selectedNode: ObjectNode? {
     findNode(in: treeObjects, matching: selectedID)
@@ -105,6 +107,7 @@ struct Mainscreen: View {
               }
               .tag(node.id)
             }
+
           }
           .listStyle(.inset)
           .inspector(isPresented: $isInspectorShown) {
@@ -117,10 +120,7 @@ struct Mainscreen: View {
           .zIndex(1)
       }
       .task {
-        vm.checkCompartmentId()
-        try? await vm.getNamespace()
-        try? await vm.listBuckets()
-        treeObjects = buildTree(from: vm.objects)
+        Task { try await prepareView() }
       }
       .onChange(of: selectedBucket) { _, newValue in
         guard let bucketName = newValue else { return }
@@ -132,9 +132,28 @@ struct Mainscreen: View {
       .onChange(of: vm.isCompartmentIdSet) { _, newValue in
         isWizardViewShown = newValue
       }
+      // Error
+      .alert("Error happened", isPresented: $showingAlert) {
+        Button("Got it!", role: .cancel) {}
+      } message: {
+        Text(errorMessage)
+      }
       .toolbar {
         ToolbarItemGroup(placement: .automatic) {
-          Button(action: { isInspectorShown.toggle() }) {
+          Button {
+            Task {
+              if let selectedBucket = selectedBucket {
+                try await vm.listObjects(bucketName: selectedBucket)
+                treeObjects = buildTree(from: vm.objects)
+              }
+            }
+          } label: {
+            Label("Refresh", systemImage: "arrow.clockwise")
+          }
+
+          Button {
+            isInspectorShown.toggle()
+          } label: {
             Label("Toggle Inspector", systemImage: "sidebar.right")
           }
         }
@@ -142,7 +161,33 @@ struct Mainscreen: View {
     }
   }
 
-  func buildTree(from rawObjects: [ObjectSummary]) -> [ObjectNode] {
+  private func prepareView() async throws {
+    // Check compartment Id
+    vm.checkCompartmentId()
+
+    // Get Namespace
+    do {
+      try await vm.getNamespace()
+    }
+    catch {
+      errorMessage = error.localizedDescription
+      showingAlert = true
+    }
+
+    // List buckets in the given Namespace
+    do {
+      try await vm.listBuckets()
+    }
+    catch {
+      errorMessage = error.localizedDescription
+      showingAlert = true
+    }
+
+    // Populating objects
+    treeObjects = buildTree(from: vm.objects)
+  }
+
+  private func buildTree(from rawObjects: [ObjectSummary]) -> [ObjectNode] {
     var root: [String: ObjectNode] = [:]
 
     for obj in rawObjects {
@@ -198,7 +243,7 @@ struct Mainscreen: View {
     }
   }
 
-  func findNode(in nodes: [ObjectNode], matching id: ObjectSummary.ID?) -> ObjectNode? {
+  private func findNode(in nodes: [ObjectNode], matching id: ObjectSummary.ID?) -> ObjectNode? {
     guard let id else { return nil }
     for node in nodes {
       if node.id == id {

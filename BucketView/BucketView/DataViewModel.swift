@@ -75,13 +75,7 @@ final class DataViewModel {
       UserDefaults.standard.string(forKey: "compartmentId") ?? ""
     }
     buckets =
-      try await client
-      .listBuckets(
-        namespaceName:
-          namespace
-          .replacingOccurrences(of: "\"", with: ""),
-        compartmentId: compartmentId
-      )
+      try await client.listBuckets(namespaceName: namespace, compartmentId: compartmentId)
 
     // Use the first bucket
     if let firstBucket = buckets.first {
