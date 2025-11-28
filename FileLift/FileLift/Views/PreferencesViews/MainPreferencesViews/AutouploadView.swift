@@ -1,11 +1,9 @@
 //
-//  Extensions.swift
+//  AutouploadView.swift
 //  FileLift
 //
-//  Created by Szabolcs Tóth on 03.10.2025.
-//
-//  This file is part of FileLift and is licensed under the MIT License.
-//  Copyright © 2025 Szabolcs Tóth.
+//  Created by Szabolcs Tóth on 28.11.2025.
+//  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -25,21 +23,27 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Foundation
+import SwiftUI
 
-extension Bundle {
-  /// The app’s version number (CFBundleShortVersionString).
-  var appVersion: String {
-    infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+struct AutouploadView: View {
+  // Properties
+  @Binding var autoUpload: Bool
+
+  var body: some View {
+    content
   }
 
-  /// The app’s build number (CFBundleVersion).
-  var buildNumber: String {
-    infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+  @ViewBuilder
+  var content: some View {
+    Section {
+      Toggle("Enable Auto Upload", isOn: $autoUpload)
+    } header: {
+      Text("Upload")
+    }
   }
+}
 
-  /// Combined version string, e.g. "1.2.3 (45)"
-  var formattedVersion: String {
-    "Version \(appVersion) (\(buildNumber))"
-  }
+// MARK: - Preview
+#Preview {
+  AutouploadView(autoUpload: .constant(true))
 }

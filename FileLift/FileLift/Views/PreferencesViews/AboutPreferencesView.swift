@@ -1,11 +1,9 @@
 //
-//  FileLiftApp.swift
+//  AboutPreferencesView.swift
 //  FileLift
 //
-//  Created by Szabolcs Tóth on 03.10.2025.
-//
-//  This file is part of FileLift and is licensed under the MIT License.
-//  Copyright © 2025 Szabolcs Tóth.
+//  Created by Szabolcs Tóth on 28.11.2025.
+//  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -25,47 +23,33 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Sparkle
 import SwiftUI
 
-@main
-struct FileLiftApp: App {
+struct AboutPreferencesView: View {
   // Private Properties
-  private let updaterController: SPUStandardUpdaterController
   // Properties
-  let dataViewModel: DataViewModelProtocol
-
-  init() {
-    updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-
-    if let model = DataViewModel() {
-      dataViewModel = model
-    }
-    else {
-      print("⚠️ DataViewModel is unavailable. Some features may be disabled.")
-      dataViewModel = MockDataViewModel()
-    }
+  var body: some View {
+    content
   }
 
-  var body: some Scene {
-    // Mainscreen
-    WindowGroup {
-      Mainscreen()
-            .environment(\.dataViewModel, dataViewModel)
-    }
-    .commands {
-      CommandGroup(after: .appInfo) {
-        CheckForUpdatesView(updater: updaterController.updater)
-      }
-    }
-    .defaultPosition(.center)
-    .windowResizability(.contentSize)
+  @ViewBuilder
+  var content: some View {
+    VStack {
+      Image("folder")
+      
+        Text("FileLift")
+        .bold()
+        .font(.title3)
+        .padding(.bottom, 10)
 
-    // Preferences
-    Settings {
-      PreferencesView()
-            .environment(\.dataViewModel, dataViewModel)
-        .frame(width: 400, height: 380)
+      Text("\(Bundle.main.formattedVersion)")
+            .font(.footnote)
     }
+    .padding(40)
   }
+}
+
+// MARK: - Preview
+#Preview {
+  AboutPreferencesView()
 }

@@ -1,5 +1,5 @@
 //
-//  FileLiftApp.swift
+//  PreferencesView.swift
 //  FileLift
 //
 //  Created by Szabolcs Tóth on 03.10.2025.
@@ -25,47 +25,35 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Sparkle
 import SwiftUI
 
-@main
-struct FileLiftApp: App {
-  // Private Properties
-  private let updaterController: SPUStandardUpdaterController
+struct PreferencesView: View {
+
   // Properties
-  let dataViewModel: DataViewModelProtocol
-
-  init() {
-    updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-
-    if let model = DataViewModel() {
-      dataViewModel = model
-    }
-    else {
-      print("⚠️ DataViewModel is unavailable. Some features may be disabled.")
-      dataViewModel = MockDataViewModel()
-    }
+  var body: some View {
+    content
   }
 
-  var body: some Scene {
-    // Mainscreen
-    WindowGroup {
-      Mainscreen()
-            .environment(\.dataViewModel, dataViewModel)
-    }
-    .commands {
-      CommandGroup(after: .appInfo) {
-        CheckForUpdatesView(updater: updaterController.updater)
-      }
-    }
-    .defaultPosition(.center)
-    .windowResizability(.contentSize)
+  @ViewBuilder
+  var content: some View {
+    TabView {
+      // Main tab
+      MainPreferencesView()
+        .tabItem {
+          Label("OCI", systemImage: "cloud")
+        }
 
-    // Preferences
-    Settings {
-      PreferencesView()
-            .environment(\.dataViewModel, dataViewModel)
-        .frame(width: 400, height: 380)
+      // About tab
+      // Application version and build for easier bug tracking
+      AboutPreferencesView()
+        .tabItem {
+          Label("Application", systemImage: "app")
+        }
     }
   }
+}
+
+// MARK: - Preview
+#Preview {
+  PreferencesView()
 }
