@@ -47,7 +47,7 @@ struct Mainscreen: View {
         }
       }
       // Error
-      .alert("Error happened", isPresented: $showingAlert) {
+      .alert("Error", isPresented: $showingAlert) {
         Button("Got it!", role: .cancel) {}
       } message: {
         Text(errorMessage)

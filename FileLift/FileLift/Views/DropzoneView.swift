@@ -29,16 +29,25 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct DropzoneView: View {
+  // Private Properties
   @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
   @State private var isDropActive = false
   @State private var dropzoneWidth: CGFloat = 340
   @State private var dropzoneHeight: CGFloat = 200
   @State private var pendingUploadPaths: [String] = []
-  @State private var showingConfirmation = false
+  @State private var showConfirmation = false
+  @State private var showAlert = false
+  @State private var errorMessage: String = ""
 
+  // Properties
   var body: some View {
     content
-      .alert("Confirmation", isPresented: $showingConfirmation) {
+      .alert("Error", isPresented: $showAlert) {
+        Button("Got it!", role: .cancel) {}
+      } message: {
+        Text(errorMessage)
+      }
+      .alert("Confirmation", isPresented: $showConfirmation) {
         Button("OK", role: .destructive) {
           Task {
             for path in pendingUploadPaths {
@@ -83,7 +92,8 @@ struct DropzoneView: View {
             var isDirectory: ObjCBool = false
             FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
             guard !isDirectory.boolValue else {
-              print("Folders are not allowed: \(url.lastPathComponent)")
+                errorMessage = "Uploading folders is not supported.\n(\(url.path))"
+              showAlert = true
               return
             }
 
@@ -96,7 +106,7 @@ struct DropzoneView: View {
 
           if confirmationIsNeeded {
             pendingUploadPaths = collectedPaths
-            showingConfirmation = true
+            showConfirmation = true
           }
           else {
             Task {
