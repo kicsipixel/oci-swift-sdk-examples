@@ -37,7 +37,7 @@ struct PARBucketSettings: View {
     
     @ViewBuilder
     var content: some View {
-      TextField("PAR bucket (Disabled):", text: $parBucketLink)
+      TextField("PAR link:", text: $parBucketLink)
     }
 }
 

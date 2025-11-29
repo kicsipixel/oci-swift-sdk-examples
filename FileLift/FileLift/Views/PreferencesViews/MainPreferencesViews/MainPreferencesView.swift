@@ -32,10 +32,10 @@ struct MainPreferencesView: View {
   @AppStorage("autoUpload") private var autoUpload = true
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
+  @AppStorage("parBucketLinkAvailable") private var parBucket = false
   @AppStorage("selection") private var selection = ""
   @State private var showingAlert = false
   @State private var errorMessage = ""
-  @State private var parBucket = false
 
   // Properties
   var body: some View {
@@ -77,8 +77,9 @@ struct MainPreferencesView: View {
 
           Button {
             Task {
-              try await self.getNamespace()
-              try await self.listBuckets()
+              if !(parBucket) {
+                  try await prepareSettings()
+              }
             }
           } label: {
             Text("Save settings")
@@ -117,6 +118,11 @@ struct MainPreferencesView: View {
       errorMessage = error.localizedDescription
       showingAlert = true
     }
+  }
+
+  private func prepareSettings() async throws {
+    try await self.getNamespace()
+    try await self.listBuckets()
   }
 }
 

@@ -1,15 +1,6 @@
 {
-  "originHash" : "fe0c7c71ba61185221ff96d8ab13b1d257669bc09ac44ced7aceac8e09f00990",
+  "originHash" : "113ed2b7dec3e1082e4aa1e6964981b3f4ed9bd0eb571b40dd1eaaa9cf20eb98",
   "pins" : [
-    {
-      "identity" : "oci-swift-sdk",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/iliasaz/oci-swift-sdk",
-      "state" : {
-        "branch" : "main",
-        "revision" : "6ab06256a7903fd58d98d3eb49bcd438d7e750f3"
-      }
-    },
     {
       "identity" : "perfect-iniparser",
       "kind" : "remoteSourceControl",

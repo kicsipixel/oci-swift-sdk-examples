@@ -85,21 +85,37 @@ final class DataViewModel: DataViewModelProtocol {
   }
 
   // MARK: - Pusts object/file into the bucket
-  // TODO: Possible errors are not handled at all. Force unwrapping.
   func putObject(filePath: String) async throws {
     isUploading = true
     defer { isUploading = false }
 
-    let url = URL(fileURLWithPath: filePath)
-    let fileData = try Data(contentsOf: url)
-    try await client.putObject(
-      namespaceName: namespace,
-      bucketName: UserDefaults.standard.string(forKey: "selection")!,
-      objectName: "\(url.lastPathComponent)",
-      putObjectBody: fileData
-    )
+    let fileToUploadURL = URL(fileURLWithPath: filePath)
+    let fileData = try Data(contentsOf: fileToUploadURL)
+      
+    if UserDefaults.standard.bool(forKey: "parBucketLinkAvailable") == true {
+      guard let parLink = UserDefaults.standard.string(forKey: "parBucketLink") else {
+        throw NSError(domain: "PAR link not set", code: 0, userInfo: nil)
+      }
 
-    self.showUploadSuccessMessage("Uploaded \(url.lastPathComponent) successfully")
+      guard let parURL = URL(string: parLink) else {
+        throw NSError(domain: "Invalid PAR URL", code: 0, userInfo: nil)
+      }
+       
+      try await client.putObject(
+        parURL:parURL,
+        objectName: "\(fileToUploadURL.lastPathComponent)",
+        putObjectBody: fileData
+      )
+    }
+    else {
+      try await client.putObject(
+        namespaceName: namespace,
+        bucketName: UserDefaults.standard.string(forKey: "selection")!,
+        objectName: "\(fileToUploadURL.lastPathComponent)",
+        putObjectBody: fileData
+      )
+    }
+    self.showUploadSuccessMessage("Uploaded \(fileToUploadURL.lastPathComponent) successfully")
   }
 
   // MARK: - Set and reset `uploadSuccessMessage`

@@ -29,7 +29,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct DropzoneView: View {
-    @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
+  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
   @State private var isDropActive = false
   @State private var dropzoneWidth: CGFloat = 340
   @State private var dropzoneHeight: CGFloat = 200
