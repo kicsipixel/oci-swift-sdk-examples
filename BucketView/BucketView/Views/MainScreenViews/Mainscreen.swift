@@ -78,6 +78,14 @@ struct Mainscreen: View {
     } message: {
       Text(errorMessage)
     }
+    .task {
+        if !(compartmentId.isEmpty) {
+            Task {
+                try await vm.getNamespace()
+                try await vm.listBuckets()
+            }
+        }
+    }
     .inspector(isPresented: $isInspectorShown) {
       InspectorView(node: selectedNode)
     }
@@ -92,13 +100,13 @@ struct Mainscreen: View {
             }
           }
         } label: {
-          Label("Refresh", systemImage: "arrow.clockwise")
+          Label("Refresh", image: "RefreshIcon")
         }
 
         Button {
           isInspectorShown.toggle()
         } label: {
-          Label("Toggle Inspector", systemImage: "sidebar.right")
+          Label("Toggle Inspector", image: "SidebarIcon")
         }
       }
     }

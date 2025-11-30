@@ -36,11 +36,6 @@ struct PreferencesView: View {
   @ViewBuilder
   var content: some View {
     TabView {
-      PreferencesTab1View()
-        .tabItem {
-          Label("OCI", systemImage: "cloud")
-        }
-
       PreferencesTab2View()
         .tabItem {
           Label("File", systemImage: "document")

@@ -33,18 +33,18 @@ struct ListView: View {
 
   var body: some View {
     GroupBox(label: Label("Objects", image: ("ObjectIcon")).bold()) {
-      List(selection: $selectedID) {
-        OutlineGroup(treeObjects, children: \.children) { node in
-          HStack {
-            Image(node.size == nil ? "FolderIcon" : "FileIcon")
-              .resizable()
-              .frame(width: 23, height: 23)
-            Text(node.name)
-          }
-          .tag(node.id)
+        List(selection: $selectedID) {
+            OutlineGroup(treeObjects, children: \.children) { node in
+                HStack {
+                    Image(node.size == nil ? "FolderIcon" : "FileIcon")
+                        .resizable()
+                        .frame(width: 23, height: 23)
+                    Text(node.name)
+                }
+                .tag(node.id)
+            }
+            .padding(6)
         }
-        .padding(6)
-      }
       .listStyle(.inset)
     }
   }

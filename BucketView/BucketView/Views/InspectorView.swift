@@ -30,50 +30,56 @@ struct InspectorView: View {
   let node: ObjectNode?
 
   var body: some View {
-    VStack(spacing: 20) {
-      Spacer()
-      if let node {
-        Image(node.size != nil ? "FileIcon" : "FolderIcon")
-          .resizable()
-          .frame(width: 60, height: 60)
+      ZStack(alignment: .bottomTrailing) {
+      VStack(spacing: 20) {
+        Spacer()
+        if let node {
+          Image(node.size != nil ? "FileIcon" : "FolderIcon")
+            .resizable()
+            .frame(width: 60, height: 60)
 
-        Text("\(node.name)")
-          .bold()
-          .font(.title2)
+          Text("\(node.name)")
+            .bold()
+            .font(.title2)
 
-        List {
-          Text("Name: ").bold() + Text(node.name)
-          Text("Size: ").bold() + Text(node.size ?? "")
-          Text("Created: ").bold() + Text(node.createdAt ?? "")
+          List {
+            Text("Name: ").bold() + Text(node.name)
+            Text("Size: ").bold() + Text(node.size ?? "")
+            Text("Created: ").bold() + Text(node.createdAt ?? "")
 
-          if UserDefaults.standard.bool(forKey: "etag") {
-            Text("ETag: ").bold() + Text(node.etag ?? "")
+            if UserDefaults.standard.bool(forKey: "etag") {
+              Text("ETag: ").bold() + Text(node.etag ?? "")
+            }
+
+            if UserDefaults.standard.bool(forKey: "md5") {
+              Text("MD5: ").bold() + Text(node.md5 ?? "")
+            }
+
+            if UserDefaults.standard.bool(forKey: "storagetier") {
+              Text("Storage Tier: ").bold() + Text(node.storagetier?.rawValue ?? "")
+            }
+
+            if UserDefaults.standard.bool(forKey: "archivalstate") {
+              Text("Archival State: ").bold() + Text(node.archivalstate?.rawValue ?? "")
+            }
           }
+          .listStyle(.bordered)
 
-          if UserDefaults.standard.bool(forKey: "md5") {
-            Text("MD5: ").bold() + Text(node.md5 ?? "")
-          }
-
-          if UserDefaults.standard.bool(forKey: "storagetier") {
-            Text("Storage Tier: ").bold() + Text(node.storagetier?.rawValue ?? "")
-          }
-
-          if UserDefaults.standard.bool(forKey: "archivalstate") {
-            Text("Archival State: ").bold() + Text(node.archivalstate?.rawValue ?? "")
-          }
+          .padding(.top, 4)
         }
-        .listStyle(.bordered)
+        else {
+          Text("No selection")
+            .foregroundColor(.secondary)
+        }
 
-        .padding(.top, 4)
+        Spacer()
       }
-      else {
-        Text("No selection")
-          .foregroundColor(.secondary)
-      }
-
-      Spacer()
+      .padding(.horizontal, 20)
+        
+          Image("ShortIcon")
+              .padding(5)
+              .opacity(node == nil ? 0 : 1)
     }
-    .padding(.horizontal, 20)
   }
 }
 

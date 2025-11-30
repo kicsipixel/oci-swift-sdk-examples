@@ -56,7 +56,7 @@ struct PreferencesTab2View: View {
           Text("Archival State:")
         }
       } header: {
-        Text("Fields of File to be shown")
+        Text("Fields to be shown")
       }
     }.formStyle(.grouped)
   }
@@ -64,5 +64,5 @@ struct PreferencesTab2View: View {
 
 // MARK: - Preview
 #Preview {
-  PreferencesTab1View()
+  PreferencesTab2View()
 }
