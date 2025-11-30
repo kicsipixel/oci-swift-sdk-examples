@@ -26,13 +26,19 @@
 import Sparkle
 import SwiftUI
 
+struct InitError: Identifiable {
+  let id = UUID()
+  let error: Error
+}
+
 @main
 struct BucketViewApp: App {
   // Private Properties
   private let updaterController: SPUStandardUpdaterController
+  @State private var initError: InitError?
 
   // Properties
-  let dataViewModel: DataViewModel
+  let dataViewModel: DataViewModelProtocol
 
   init() {
     // Sparkle init
@@ -42,14 +48,24 @@ struct BucketViewApp: App {
       dataViewModel = try DataViewModel()
     }
     catch {
-      fatalError("Failed to initialize DataViewModel: \(error)")
+      // Wrap the error so SwiftUI can track it
+      _initError = State(initialValue: InitError(error: error))
+      print("⚠️ Failed to initialize DataViewModel: \(error)")
+      dataViewModel = MockDataViewModel()
     }
   }
 
   var body: some Scene {
     WindowGroup {
       Mainscreen()
-        .environment(dataViewModel)
+        .environment(\.dataViewModel, dataViewModel)
+        .alert(item: $initError) { initError in
+          Alert(
+            title: Text("Initialization Error"),
+            message: Text(initError.error.localizedDescription),
+            dismissButton: .default(Text("OK"))
+          )
+        }
     }
     .commands {
       CommandGroup(after: .appInfo) {
@@ -62,7 +78,7 @@ struct BucketViewApp: App {
     // Preferences
     Settings {
       PreferencesView()
-        .environment(dataViewModel)
+        .environment(\.dataViewModel, dataViewModel)
         .frame(width: 400, height: 400)
     }
   }

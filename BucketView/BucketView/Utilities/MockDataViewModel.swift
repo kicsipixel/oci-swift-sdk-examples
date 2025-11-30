@@ -1,8 +1,8 @@
 //
-//  SidebarView.swift
+//  MockDataViewModel.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 17.10.2025.
+//  Created by Szabolcs Tóth on 11.11.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,40 +26,33 @@
 import OCIKit
 import SwiftUI
 
-struct SidebarView: View {
-  // Private properties
-  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
-  @Binding var selectedBucket: String?
-
-  // Properties
-  var body: some View {
-    ZStack {
-      // Background
-
-      // List
-      List(selection: $selectedBucket) {
-        Section("BUCKETS") {
-          ForEach(vm.buckets, id: \.name) { bucket in
-            HStack {
-              Image("BucketIcon")
-                .resizable()
-                .frame(width: 20, height: 20)
-              Text("\(bucket.name)")
-            }
-            .foregroundStyle(Color.text)
-            .bold()
-            .shadow(color: .white.opacity(0.35), radius: 0, x: 1, y: 1)
-          }
-        }
-      }
-      .listStyle(SidebarListStyle())
-      .frame(minWidth: 300)
+@Observable @MainActor
+final class MockDataViewModel: DataViewModelProtocol {
+    var namespace: String = ""
+    var buckets: [BucketSummary] = [
+        BucketSummary(compartmentId: "DEMOCOMPARTMENTID", createdBy: "DEMO", etag: "DEMOETAG", name: "DEMOBUCKET", namespace: "DEMO", timeCreatedRaw: "2025-11-11T12:34:56.789Z")
+      ]
+    var objects = [ObjectSummary]()
+    
+    var isCompartmentIdSet: Bool = false
+    
+    func getNamespace() async throws {
+        //
     }
-  }
+    
+    func listBuckets() async throws {
+        //
+    }
+    
+    func listObjects(bucketName: String) async throws {
+        //
+    }
+    
+    func checkCompartmentId() {
+        //
+    }
 }
 
-// MARK: - Preview
-#Preview {
-  SidebarView(selectedBucket: .constant(nil))
-    .environment(DataViewModel.preview)
-}
+
+
+

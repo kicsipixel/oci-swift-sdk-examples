@@ -32,7 +32,7 @@ struct WizardView: View {
   @AppStorage("md5") private var md5: Bool = false
   @AppStorage("storagetier") private var storageTier: Bool = false
   @AppStorage("archivalstate") private var archivalState: Bool = false
-  @Environment(DataViewModel.self) private var vm
+  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
 
   // Properties
   @Binding var show: Bool

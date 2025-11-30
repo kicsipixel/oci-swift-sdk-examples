@@ -28,8 +28,20 @@
 import OCIKit
 import SwiftUI
 
+protocol DataViewModelProtocol: Observable {
+  var namespace: String { get set }
+  var buckets: [BucketSummary] { get set }
+  var objects: [ObjectSummary] { get set }
+  var isCompartmentIdSet: Bool { get set }
+
+  func getNamespace() async throws
+  func listBuckets() async throws
+  func listObjects(bucketName: String) async throws
+  func checkCompartmentId()
+}
+
 @Observable @MainActor
-final class DataViewModel {
+final class DataViewModel: DataViewModelProtocol {
   // Private properties
   // Properties
   let client: ObjectStorageClient
@@ -122,4 +134,15 @@ final class DataViewModel {
   func checkCompartmentId() {
     isCompartmentIdSet = UserDefaults.standard.string(forKey: "compartmentId")?.isEmpty == true
   }
+}
+
+private struct DataViewModelKey: EnvironmentKey {
+    static let defaultValue: DataViewModelProtocol = MockDataViewModel()
+}
+
+extension EnvironmentValues {
+    var dataViewModel: DataViewModelProtocol {
+        get { self[DataViewModelKey.self] }
+        set { self[DataViewModelKey.self] = newValue }
+    }
 }

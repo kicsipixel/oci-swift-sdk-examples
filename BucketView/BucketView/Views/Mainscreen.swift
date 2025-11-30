@@ -70,7 +70,7 @@ struct ObjectNode: Identifiable, Hashable {
 }
 
 struct Mainscreen: View {
-  @Environment(DataViewModel.self) private var vm
+  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
   @State private var isInspectorShown: Bool = false
   @State private var selectedBucket: String? = nil
   @State private var treeObjects: [ObjectNode] = []
