@@ -1,8 +1,8 @@
 //
-//  MockDataViewModel.swift
+//  BucketPicker.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 11.11.2025.
+//  Created by Szabolcs Tóth on 30.11.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,29 +26,43 @@
 import OCIKit
 import SwiftUI
 
-@Observable @MainActor
-final class MockDataViewModel: DataViewModelProtocol {
-  var namespace: String = ""
-  var buckets: [BucketSummary] = [
-    BucketSummary(compartmentId: "DEMOCOMPARTMENTID", createdBy: "DEMO", etag: "DEMOETAG", name: "DEMOBUCKET", namespace: "DEMO", timeCreatedRaw: "2025-11-11T12:34:56.789Z")
-  ]
-  var objects = [ObjectSummary]()
+struct BucketPicker: View {
+  // Private Properties
+  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
 
-  var isCompartmentIdSet: Bool = false
+  // Properties
+  @Binding var isParLinkWanted: Bool
+  @Binding var selectedBucket: String
 
-  func getNamespace() async throws {
-    //
+  var body: some View {
+    content
   }
 
-  func listBuckets() async throws {
-    //
+  @ViewBuilder
+  var content: some View {
+    GroupBox(label: Label("Buckets", image: "DatabaseIcon").bold()) {
+      Picker("Bucket:", selection: $selectedBucket) {
+        ForEach(vm.buckets, id: \.name) { bucket in
+          Text(bucket.name).tag(bucket.name)
+        }
+      }
+      .disabled(isParLinkWanted ? true : false)
+      .padding(.vertical, 3)
+      .padding(.horizontal, 6)
+    }
+    .onChange(of: selectedBucket) { _, newValue in
+      if !newValue.isEmpty {
+        Task {
+          try await vm.listObjects(bucketName: newValue)
+            
+        }
+      }
+    }
   }
+}
 
-  func listObjects(bucketName: String) async throws {
-    //
-  }
-
-  func checkCompartmentId() {
-    //
-  }
+// MARK: - Preview
+#Preview {
+    BucketPicker(isParLinkWanted: .constant(false), selectedBucket: .constant("par"))
+    .environment(MockDataViewModel())
 }

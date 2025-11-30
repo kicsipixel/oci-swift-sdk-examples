@@ -26,58 +26,18 @@
 import OCIKit
 import SwiftUI
 
-// MARK: - Object Model for Tree
-struct ObjectNode: Identifiable, Hashable {
-  let id: ObjectSummary.ID
-  let name: String
-  let size: String?
-  let createdAt: String?
-  let etag: String?
-  let md5: String?
-  let storagetier: StorageTier?
-  let archivalstate: ArchivalState?
-  var children: [ObjectNode]?
-
-  init(
-    id: ObjectSummary.ID,
-    name: String,
-    size: String? = nil,
-    createdAt: String? = nil,
-    etag: String? = nil,
-    md5: String? = nil,
-    storagetier: StorageTier? = nil,
-    archivalstate: ArchivalState? = nil,
-    children: [ObjectNode]? = nil
-  ) {
-    self.id = id
-    self.name = name
-    self.size = size
-    self.createdAt = createdAt
-    self.etag = etag
-    self.md5 = md5
-    self.storagetier = storagetier
-    self.archivalstate = archivalstate
-    self.children = children
-  }
-
-  func hash(into hasher: inout Hasher) {
-    hasher.combine(id)
-  }
-
-  static func == (lhs: ObjectNode, rhs: ObjectNode) -> Bool {
-    lhs.id == rhs.id
-  }
-}
-
 struct Mainscreen: View {
+  @AppStorage("compartmentId") private var compartmentId: String = ""
   @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
   @State private var isInspectorShown: Bool = false
-  @State private var selectedBucket: String? = nil
+  @State private var selectedBucket: String = ""
   @State private var treeObjects: [ObjectNode] = []
   @State private var selectedID: ObjectSummary.ID?
   @State private var isWizardViewShown = false
   @State private var showingAlert: Bool = false
   @State private var errorMessage: String = ""
+  @State private var isParLinkWanted = false
+  @State private var parLink = ""
 
   private var selectedNode: ObjectNode? {
     findNode(in: treeObjects, matching: selectedID)
@@ -91,71 +51,54 @@ struct Mainscreen: View {
   }()
 
   var body: some View {
-    NavigationSplitView {
-      SidebarView(selectedBucket: $selectedBucket)
-    } detail: {
-      ZStack {
-        VStack {
-          List(selection: $selectedID) {
-            OutlineGroup(treeObjects, children: \.children) { node in
-              HStack {
-                Image(node.size?.isEmpty == nil ? "FolderIcon" : "FileIcon")
-                  .resizable()
-                  .frame(width: 30, height: 30)
+    VStack {
+      VStack(alignment: .leading) {
+        // OCI Basic Settings
+        OCSettingsView(isParLinkWanted: $isParLinkWanted, compartmentId: $compartmentId, parLink: $parLink, selectedBucket: $selectedBucket)
 
-                Text(node.name)
-              }
-              .tag(node.id)
+        // Bucket Picker
+        BucketPicker(isParLinkWanted: $isParLinkWanted, selectedBucket: $selectedBucket)
+      }
+      .padding(.bottom, 3)
+
+      // List view
+      ListView(selectedID: $selectedID, treeObjects: $treeObjects)
+    }
+    .padding(.vertical, 15)
+    .padding(.horizontal, 10)
+    .onChange(of: selectedBucket) { _, newValue in
+      Task {
+        try await vm.listObjects(bucketName: newValue)
+        treeObjects = buildTree(from: vm.objects)
+      }
+    }
+    // Error
+    .alert("Error happened", isPresented: $showingAlert) {
+      Button("Got it!", role: .cancel) {}
+    } message: {
+      Text(errorMessage)
+    }
+    .inspector(isPresented: $isInspectorShown) {
+      InspectorView(node: selectedNode)
+    }
+    .toolbar {
+      ToolbarItemGroup(placement: .automatic) {
+          
+        Button {
+          Task {
+            if selectedBucket.count > 0 {
+              try await vm.listObjects(bucketName: selectedBucket)
+              treeObjects = buildTree(from: vm.objects)
             }
-
           }
-          .listStyle(.inset)
-          .inspector(isPresented: $isInspectorShown) {
-            InspectorView(node: selectedNode)
-          }
+        } label: {
+          Label("Refresh", systemImage: "arrow.clockwise")
         }
-        .frame(minWidth: 500)
 
-        WizardView(show: $isWizardViewShown)
-          .zIndex(1)
-      }
-      .task {
-        Task { try await prepareView() }
-      }
-      .onChange(of: selectedBucket) { _, newValue in
-        guard let bucketName = newValue else { return }
-        Task {
-          try await vm.listObjects(bucketName: bucketName)
-          treeObjects = buildTree(from: vm.objects)
-        }
-      }
-      .onChange(of: vm.isCompartmentIdSet) { _, newValue in
-        isWizardViewShown = newValue
-      }
-      // Error
-      .alert("Error happened", isPresented: $showingAlert) {
-        Button("Got it!", role: .cancel) {}
-      } message: {
-        Text(errorMessage)
-      }
-      .toolbar {
-        ToolbarItemGroup(placement: .automatic) {
-          Button {
-            Task {
-              if let selectedBucket = selectedBucket {
-                try await vm.listObjects(bucketName: selectedBucket)
-                treeObjects = buildTree(from: vm.objects)
-              }
-            }
-          } label: {
-            Label("Refresh", systemImage: "arrow.clockwise")
-          }
-
-          Button {
-            isInspectorShown.toggle()
-          } label: {
-            Label("Toggle Inspector", systemImage: "sidebar.right")
-          }
+        Button {
+          isInspectorShown.toggle()
+        } label: {
+          Label("Toggle Inspector", systemImage: "sidebar.right")
         }
       }
     }

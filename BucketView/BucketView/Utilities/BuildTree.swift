@@ -1,8 +1,8 @@
 //
-//  MockDataViewModel.swift
+//  BuildTree.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 11.11.2025.
+//  Created by Szabolcs Tóth on 30.11.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,32 +23,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Foundation
 import OCIKit
-import SwiftUI
 
-@Observable @MainActor
-final class MockDataViewModel: DataViewModelProtocol {
-  var namespace: String = ""
-  var buckets: [BucketSummary] = [
-    BucketSummary(compartmentId: "DEMOCOMPARTMENTID", createdBy: "DEMO", etag: "DEMOETAG", name: "DEMOBUCKET", namespace: "DEMO", timeCreatedRaw: "2025-11-11T12:34:56.789Z")
-  ]
-  var objects = [ObjectSummary]()
-
-  var isCompartmentIdSet: Bool = false
-
-  func getNamespace() async throws {
-    //
-  }
-
-  func listBuckets() async throws {
-    //
-  }
-
-  func listObjects(bucketName: String) async throws {
-    //
-  }
-
-  func checkCompartmentId() {
-    //
-  }
+struct TreeBuilder {
 }

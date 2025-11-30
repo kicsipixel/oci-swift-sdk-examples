@@ -1,8 +1,8 @@
 //
-//  MockDataViewModel.swift
+//  ListView.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 11.11.2025.
+//  Created by Szabolcs Tóth on 30.11.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,29 +26,31 @@
 import OCIKit
 import SwiftUI
 
-@Observable @MainActor
-final class MockDataViewModel: DataViewModelProtocol {
-  var namespace: String = ""
-  var buckets: [BucketSummary] = [
-    BucketSummary(compartmentId: "DEMOCOMPARTMENTID", createdBy: "DEMO", etag: "DEMOETAG", name: "DEMOBUCKET", namespace: "DEMO", timeCreatedRaw: "2025-11-11T12:34:56.789Z")
-  ]
-  var objects = [ObjectSummary]()
+struct ListView: View {
+  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
+  @Binding var selectedID: ObjectNode.ID?
+  @Binding var treeObjects: [ObjectNode]
 
-  var isCompartmentIdSet: Bool = false
-
-  func getNamespace() async throws {
-    //
+  var body: some View {
+    GroupBox(label: Label("Objects", image: ("ObjectIcon")).bold()) {
+      List(selection: $selectedID) {
+        OutlineGroup(treeObjects, children: \.children) { node in
+          HStack {
+            Image(node.size == nil ? "FolderIcon" : "FileIcon")
+              .resizable()
+              .frame(width: 23, height: 23)
+            Text(node.name)
+          }
+          .tag(node.id)
+        }
+        .padding(6)
+      }
+      .listStyle(.inset)
+    }
   }
+}
 
-  func listBuckets() async throws {
-    //
-  }
-
-  func listObjects(bucketName: String) async throws {
-    //
-  }
-
-  func checkCompartmentId() {
-    //
-  }
+// MARK: - Preview
+#Preview {
+  ListView(selectedID: .constant(nil), treeObjects: .constant([]))
 }

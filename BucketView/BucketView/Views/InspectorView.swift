@@ -41,28 +41,28 @@ struct InspectorView: View {
           .bold()
           .font(.title2)
 
-          List {
-            Text("Name: ").bold() + Text(node.name)
-            Text("Size: ").bold() + Text(node.size ?? "")
-            Text("Created: ").bold() + Text(node.createdAt ?? "")
+        List {
+          Text("Name: ").bold() + Text(node.name)
+          Text("Size: ").bold() + Text(node.size ?? "")
+          Text("Created: ").bold() + Text(node.createdAt ?? "")
 
-            if UserDefaults.standard.bool(forKey: "etag") {
-              Text("ETag: ").bold() + Text(node.etag ?? "")
-            }
-
-            if UserDefaults.standard.bool(forKey: "md5") {
-              Text("MD5: ").bold() + Text(node.md5 ?? "")
-            }
-
-            if UserDefaults.standard.bool(forKey: "storagetier") {
-              Text("Storage Tier: ").bold() + Text(node.storagetier?.rawValue ?? "")
-            }
-
-            if UserDefaults.standard.bool(forKey: "archivalstate") {
-              Text("Archival State: ").bold() + Text(node.archivalstate?.rawValue ?? "")
-            }
+          if UserDefaults.standard.bool(forKey: "etag") {
+            Text("ETag: ").bold() + Text(node.etag ?? "")
           }
-          .listStyle(.bordered)
+
+          if UserDefaults.standard.bool(forKey: "md5") {
+            Text("MD5: ").bold() + Text(node.md5 ?? "")
+          }
+
+          if UserDefaults.standard.bool(forKey: "storagetier") {
+            Text("Storage Tier: ").bold() + Text(node.storagetier?.rawValue ?? "")
+          }
+
+          if UserDefaults.standard.bool(forKey: "archivalstate") {
+            Text("Archival State: ").bold() + Text(node.archivalstate?.rawValue ?? "")
+          }
+        }
+        .listStyle(.bordered)
 
         .padding(.top, 4)
       }

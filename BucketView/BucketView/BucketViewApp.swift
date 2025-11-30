@@ -58,6 +58,7 @@ struct BucketViewApp: App {
   var body: some Scene {
     WindowGroup {
       Mainscreen()
+            .frame(minWidth: 600, minHeight: 480)
         .environment(\.dataViewModel, dataViewModel)
         .alert(item: $initError) { initError in
           Alert(

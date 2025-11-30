@@ -29,7 +29,7 @@ struct PreferencesTab1View: View {
   // Private Properties
   @AppStorage("compartmentId") private var compartmentId: String = ""
   @AppStorage("parBucketLink") private var parBucketLink: String = ""
-  @Environment(DataViewModel.self) private var vm
+  @Environment(\.dataViewModel) private var vm: DataViewModelProtocol
 
   // Properties
   var body: some View {

@@ -42,92 +42,53 @@ protocol DataViewModelProtocol: Observable {
 
 @Observable @MainActor
 final class DataViewModel: DataViewModelProtocol {
-  // Private properties
-  // Properties
+    
+
   let client: ObjectStorageClient
   var namespace: String = ""
   var buckets = [BucketSummary]()
-  var objects = ListObjects(nextStartWith: nil, objects: [], prefixes: nil).objects
+  var objects = [ObjectSummary]()
   var isCompartmentIdSet = false
+
 
   init() throws {
     let env = ProcessInfo.processInfo.environment
-    let ociConfigFilePath =
-      env["OCI_CONFIG_FILE"] ?? "\(NSHomeDirectory())/.oci/config"
+    let ociConfigFilePath = env["OCI_CONFIG_FILE"] ?? "\(NSHomeDirectory())/.oci/config"
     let ociProfileName = env["OCI_PROFILE"] ?? "DEFAULT"
-    let regionId = try extractUserRegion(
-      from: ociConfigFilePath,
-      profile: ociProfileName
-    )
+    let regionId = try extractUserRegion(from: ociConfigFilePath, profile: ociProfileName)
     let region = Region.from(regionId: regionId ?? "") ?? .iad
-    let signer = try APIKeySigner(
-      configFilePath: ociConfigFilePath,
-      configName: ociProfileName
-    )
+    let signer = try APIKeySigner(configFilePath: ociConfigFilePath, configName: ociProfileName)
     client = try ObjectStorageClient(region: region, signer: signer)
   }
 
-  // A non-throwing mock initializer or static property for preview purposes.
   static var preview: DataViewModel {
     let mock = try! DataViewModel()
-    // optionally stub any values here
     return mock
   }
 
-  // MARK: - Gets namespace of the user's object storage
   func getNamespace() async throws {
     namespace = try await client.getNamespace()
   }
 
-  // MARK: - Lists buckets in the user given compartment
-  // TODO: Error handling is missing.
   func listBuckets() async throws {
-    buckets = []
-    var compartmentId: String {
-      UserDefaults.standard.string(forKey: "compartmentId") ?? ""
-    }
-    buckets =
-      try await client.listBuckets(namespaceName: namespace, compartmentId: compartmentId)
-
-    // Use the first bucket
-    if let firstBucket = buckets.first {
-      try await listObjects(bucketName: firstBucket.name)
-    }
-    else {
-      objects = []
-    }
+    let compartmentId = UserDefaults.standard.string(forKey: "compartmentId") ?? ""
+    buckets = try await client.listBuckets(namespaceName: namespace, compartmentId: compartmentId)
   }
 
-  // MARK: - Lists object in the selected bucket
   func listObjects(bucketName: String) async throws {
     let defaults = UserDefaults.standard
     var fields: [Field] = [.name, .size, .timeCreated, .timeModified]
 
-    if defaults.bool(forKey: "etag") {
-      fields.append(.etag)
-    }
-    if defaults.bool(forKey: "md5") {
-      fields.append(.md5)
-    }
-    if defaults.bool(forKey: "storagetier") {
-      fields.append(.storageTier)
-    }
-    if defaults.bool(forKey: "archivalstate") {
-      fields.append(.archivalState)
-    }
+    if defaults.bool(forKey: "etag") { fields.append(.etag) }
+    if defaults.bool(forKey: "md5") { fields.append(.md5) }
+    if defaults.bool(forKey: "storagetier") { fields.append(.storageTier) }
+    if defaults.bool(forKey: "archivalstate") { fields.append(.archivalState) }
 
-    objects = []
-    do {
-      if fields.isEmpty {
-        objects = try await client.listObjects(namespaceName: namespace, bucketName: bucketName).objects
-      }
-      else {
-        objects = try await client.listObjects(namespaceName: namespace, bucketName: bucketName, fields: fields).objects
-      }
+    if fields.isEmpty {
+      objects = try await client.listObjects(namespaceName: namespace, bucketName: bucketName).objects
     }
-    catch {
-      // TODO: Handle error message
-      print("\(error)")
+    else {
+      objects = try await client.listObjects(namespaceName: namespace, bucketName: bucketName, fields: fields).objects
     }
   }
 
@@ -137,12 +98,12 @@ final class DataViewModel: DataViewModelProtocol {
 }
 
 private struct DataViewModelKey: EnvironmentKey {
-    static let defaultValue: DataViewModelProtocol = MockDataViewModel()
+  static let defaultValue: DataViewModelProtocol = MockDataViewModel()
 }
 
 extension EnvironmentValues {
-    var dataViewModel: DataViewModelProtocol {
-        get { self[DataViewModelKey.self] }
-        set { self[DataViewModelKey.self] = newValue }
-    }
+  var dataViewModel: DataViewModelProtocol {
+    get { self[DataViewModelKey.self] }
+    set { self[DataViewModelKey.self] = newValue }
+  }
 }

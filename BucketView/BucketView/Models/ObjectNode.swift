@@ -1,8 +1,8 @@
 //
-//  MockDataViewModel.swift
+//  ObjectNode.swift
 //  BucketView
 //
-//  Created by Szabolcs Tóth on 11.11.2025.
+//  Created by Szabolcs Tóth on 30.11.2025.
 //  Copyright © 2025 Szabolcs Tóth
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,32 +23,47 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Foundation
 import OCIKit
-import SwiftUI
 
-@Observable @MainActor
-final class MockDataViewModel: DataViewModelProtocol {
-  var namespace: String = ""
-  var buckets: [BucketSummary] = [
-    BucketSummary(compartmentId: "DEMOCOMPARTMENTID", createdBy: "DEMO", etag: "DEMOETAG", name: "DEMOBUCKET", namespace: "DEMO", timeCreatedRaw: "2025-11-11T12:34:56.789Z")
-  ]
-  var objects = [ObjectSummary]()
+struct ObjectNode: Identifiable, Hashable {
+  let id: ObjectSummary.ID
+  let name: String
+  let size: String?
+  let createdAt: String?
+  let etag: String?
+  let md5: String?
+  let storagetier: StorageTier?
+  let archivalstate: ArchivalState?
+  var children: [ObjectNode]?
 
-  var isCompartmentIdSet: Bool = false
-
-  func getNamespace() async throws {
-    //
+  init(
+    id: ObjectSummary.ID,
+    name: String,
+    size: String? = nil,
+    createdAt: String? = nil,
+    etag: String? = nil,
+    md5: String? = nil,
+    storagetier: StorageTier? = nil,
+    archivalstate: ArchivalState? = nil,
+    children: [ObjectNode]? = nil
+  ) {
+    self.id = id
+    self.name = name
+    self.size = size
+    self.createdAt = createdAt
+    self.etag = etag
+    self.md5 = md5
+    self.storagetier = storagetier
+    self.archivalstate = archivalstate
+    self.children = children
   }
 
-  func listBuckets() async throws {
-    //
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
   }
 
-  func listObjects(bucketName: String) async throws {
-    //
-  }
-
-  func checkCompartmentId() {
-    //
+  static func == (lhs: ObjectNode, rhs: ObjectNode) -> Bool {
+    lhs.id == rhs.id
   }
 }
