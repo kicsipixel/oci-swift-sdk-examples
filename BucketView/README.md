@@ -11,11 +11,6 @@
   <img src="./img/Settings.png" alt="BucketView Settings" width="40%">
 </p>
 
-<p align="center">
-  <img src="./img/BucketViewDark.png" alt="BucketView UI" width="55%">
-  <img src="./img/SettingsDark.png" alt="BucketView Settings" width="40%">
-</p>
-
 ---
 
 ## Setup Instructions
@@ -29,7 +24,7 @@ Ensure you have a valid OCI `config` file located at:
 ```
 
 ### Step 2: Launch and Configure
-Start the BucketView application and navigate to **Settings...**. Enter your `compartmentId` to fetch the list of available buckets. Select a bucket to begin browsing files.
+Start the BucketView application. Enter your `compartmentId` to fetch the list of available buckets. Select a bucket to begin browsing files.
 
 ---
 
