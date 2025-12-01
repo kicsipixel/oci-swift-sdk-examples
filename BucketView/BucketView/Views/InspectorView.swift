@@ -76,7 +76,7 @@ struct InspectorView: View {
       }
       .padding(.horizontal, 20)
         
-          Image("ShortIcon")
+          Image("InspectorIcon")
               .padding(5)
               .opacity(node == nil ? 0 : 1)
     }

@@ -32,22 +32,24 @@ struct PreferencesTab3View: View {
 
   @ViewBuilder
   var content: some View {
-    VStack {
-      Text("BucketView")
-        .bold()
-        .font(.title3)
-        .padding(.top, 40)
-      Form {
-        // Application version and build for easier bug tracking
-        Section {
-          Text("\(Bundle.main.formattedVersion)")
-        }
+    ZStack {
+// Background image
+      Image("PreferencesIcon")
+
+      VStack {
+          Text("BucketView")
+              .font(Font.title2.bold())
+              .foregroundStyle(.white)
+        Text("\(Bundle.main.formattedVersion)")
+              .font(Font.caption.bold())
+          .foregroundStyle(.white)
       }
-      .formStyle(.grouped)
+      .offset(x: -32, y: -20)
     }
+    .padding(20)
   }
 }
 
 #Preview {
-  PreferencesTab2View()
+  PreferencesTab3View()
 }
