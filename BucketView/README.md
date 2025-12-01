@@ -40,6 +40,6 @@ Start the BucketView application. Enter your `compartmentId` to fetch the list o
 
 - [ ] Error handling and user feedback
 - [ ] Preauthenticated bucket support
-- [ ] Handling additional `fields` support
+- [x] ~~Handling additional `fields` support~~
 
 ---
