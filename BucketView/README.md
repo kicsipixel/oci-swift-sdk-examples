@@ -7,15 +7,9 @@
 **BucketView** is a lightweight macOS client for browsing bucket and objets in [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/europe/cloud/) Object Storage. Designed with clarity and elegance in mind, it provides a file inspector to view your cloud-stored content.
 
 <p align="center">
-  <img src="./img/BucketView.png" alt="BucketView UI" width="55%">
+  <img src="./img/BucketView.png" alt="BucketView UI" width="59%">
   <img src="./img/Settings.png" alt="BucketView Settings" width="40%">
 </p>
-
-<p align="center">
-  <img src="./img/BucketViewDark.png" alt="BucketView UI" width="55%">
-  <img src="./img/SettingsDark.png" alt="BucketView Settings" width="40%">
-</p>
-
 ---
 
 ## Setup Instructions
@@ -29,7 +23,7 @@ Ensure you have a valid OCI `config` file located at:
 ```
 
 ### Step 2: Launch and Configure
-Start the BucketView application and navigate to **Settings...**. Enter your `compartmentId` to fetch the list of available buckets. Select a bucket to begin browsing files.
+Start the BucketView application. Enter your `compartmentId` to fetch the list of available buckets. Select a bucket to begin browsing files.
 
 ---
 
@@ -45,6 +39,6 @@ Start the BucketView application and navigate to **Settings...**. Enter your `co
 
 - [ ] Error handling and user feedback
 - [ ] Preauthenticated bucket support
-- [ ] Handling additional `fields` support
+- [x] ~~Handling additional `fields` support~~
 
 ---

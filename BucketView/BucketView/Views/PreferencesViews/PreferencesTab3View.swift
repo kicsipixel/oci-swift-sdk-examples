@@ -32,21 +32,20 @@ struct PreferencesTab3View: View {
 
   @ViewBuilder
   var content: some View {
-    ZStack {
+      ZStack(alignment:  .center) {
 // Background image
       Image("PreferencesIcon")
-
+            .offset(x: -132, y: -10)
+        
       VStack {
           Text("BucketView")
-              .font(Font.title2.bold())
-              .foregroundStyle(.white)
+              .font(Font.title.bold())
         Text("\(Bundle.main.formattedVersion)")
               .font(Font.caption.bold())
-          .foregroundStyle(.white)
       }
-      .offset(x: -32, y: -20)
+      .offset(y: -60)
     }
-    .padding(20)
+      .padding(.top, 20)
   }
 }
 

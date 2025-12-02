@@ -54,7 +54,7 @@ struct BucketPicker: View {
       if !newValue.isEmpty {
         Task {
           try await vm.listObjects(bucketName: newValue)
-            
+
         }
       }
     }
@@ -63,6 +63,6 @@ struct BucketPicker: View {
 
 // MARK: - Preview
 #Preview {
-    BucketPicker(isParLinkWanted: .constant(false), selectedBucket: .constant("par"))
+  BucketPicker(isParLinkWanted: .constant(false), selectedBucket: .constant("par"))
     .environment(MockDataViewModel())
 }
