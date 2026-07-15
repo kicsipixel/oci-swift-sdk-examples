@@ -1,0 +1,3 @@
+# Local deploy config — contains your OCIDs and derived state. Never commit.
+config.env
+state.env

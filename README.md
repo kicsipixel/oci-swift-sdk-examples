@@ -28,6 +28,18 @@ Key features:
 
 [View BucketView →](https://github.com/kicsipixel/oci-swift-sdk-examples/tree/main/BucketView)
 
+### BucketRelay
+
+**BucketRelay** is a server-side example: a small [Hummingbird](https://github.com/hummingbird-project/hummingbird) REST service that uploads and downloads files to OCI Object Storage. It runs as an **OCI Container Instance** and authenticates with **Resource Principals** — no API keys or config file in the image.
+
+Key features:
+- Deploys a Swift server as a container with no VM/OS to manage (Container Instances)
+- Authenticates from inside the container via `ResourcePrincipalSigner` (keyless)
+- Uploads, downloads, lists, and deletes objects through a public REST API
+- Includes scripts for the required networking, bucket, dynamic group, and policy
+
+[View BucketRelay →](./BucketRelay)
+
 ---
 
 ## 🚀 Getting Started
