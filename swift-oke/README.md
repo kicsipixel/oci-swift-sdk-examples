@@ -100,16 +100,31 @@ kubectl apply -f deploy/swift-oke.yaml
 kubectl rollout status deploy/swift-oke
 ```
 
-## Test it
+## Expose it (public URL)
+
+The manifest's Service is `ClusterIP` (internal only) by default. To get a **public URL**, expose it through an OCI Load Balancer — either set `type: LoadBalancer` in the manifest, or patch the running Service:
 
 ```bash
-kubectl port-forward svc/swift-oke 8080:80
-curl localhost:8080/health          # -> ok
-curl localhost:8080/file            # -> the text content of swift-oke-test.txt
-curl localhost:8080/files/some-other-object.txt
+kubectl patch svc swift-oke -p '{"spec":{"type":"LoadBalancer"}}'
+kubectl get svc swift-oke -w   # wait for EXTERNAL-IP to change from <pending> to a public IP
 ```
 
-If `/file` returns the file's text, the pod authenticated to Object Storage purely through its Kubernetes identity.
+This provisions a load balancer with **its own public IP** — distinct from the cluster's API-server endpoint (`:6443`), which never routes to your workloads — and it incurs cost. Revert with `kubectl patch svc swift-oke -p '{"spec":{"type":"ClusterIP"}}'`.
+
+## Test it
+
+Once the Service has an `EXTERNAL-IP`:
+
+```bash
+LB=<external-ip>
+curl http://$LB/health                       # -> ok
+curl http://$LB/file                         # -> the text content of swift-oke-test.txt
+curl http://$LB/files/some-other-object.txt
+```
+
+If `/file` returns the file's text, the pod authenticated to Object Storage purely through its Kubernetes identity — no keys, no config.
+
+> **OKE Virtual Nodes:** `kubectl port-forward` and `kubectl exec` return `501 not implemented`, so test via the LoadBalancer above, or from inside the cluster — a one-shot curl `Job` hitting the ClusterIP `http://swift-oke.default.svc.cluster.local`, read back with `kubectl logs`. (`kubectl logs` works on virtual nodes; `port-forward`/`exec` do not.)
 
 ## Notes
 
