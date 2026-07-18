@@ -111,6 +111,8 @@ kubectl get svc swift-oke -w   # wait for EXTERNAL-IP to change from <pending> t
 
 This provisions a load balancer with **its own public IP** — distinct from the cluster's API-server endpoint (`:6443`), which never routes to your workloads — and it incurs cost. Revert with `kubectl patch svc swift-oke -p '{"spec":{"type":"ClusterIP"}}'`.
 
+> ⚠️ **Virtual Nodes:** the default `type: LoadBalancer` registers *worker nodes* as backends (via a NodePort). On a **Virtual-Nodes-only** cluster there are no such nodes, so the LB comes up with no backends (`Warning ... There are no available nodes for LoadBalancer`) and returns empty replies. To expose a service publicly on virtual nodes, either add a managed/self-managed **worker node pool**, or use the **OCI Native Ingress Controller** (which targets pod IPs directly). Otherwise, test from inside the cluster (below).
+
 ## Test it
 
 Once the Service has an `EXTERNAL-IP`:
