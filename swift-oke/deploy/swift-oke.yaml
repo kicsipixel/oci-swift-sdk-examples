@@ -1,0 +1,85 @@
+# swift-oke — OKE Workload Identity demo.
+#
+# Prerequisites (one-time; see README for the OCI-side commands):
+#   1. An ENHANCED OKE cluster (workload identity requires an enhanced cluster).
+#   2. A condition-based `any-user` IAM policy authorizing this pod's workload
+#      identity (namespace 'default', service account 'swift-oke', cluster OCID)
+#      to read the bucket. OKE Workload Identity does NOT use dynamic groups.
+#
+# No CA/trust-store step is needed: the signer pins the cluster CA in-process.
+# Replace every <PLACEHOLDER> before applying.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: swift-oke
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swift-oke
+  namespace: default
+  labels:
+    app: swift-oke
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swift-oke
+  template:
+    metadata:
+      labels:
+        app: swift-oke
+    spec:
+      serviceAccountName: swift-oke
+      # Projects the SA token (/var/run/secrets/.../token) and the cluster CA
+      # (/var/run/secrets/.../ca.crt) into the pod. Required for workload identity.
+      automountServiceAccountToken: true
+      containers:
+        - name: swift-oke
+          # Push to any registry your cluster can pull from. Docker Hub example:
+          image: docker.io/<your-dockerhub-user>/swift-oke:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OCI_REGION
+              value: "<region>" # e.g. us-phoenix-1
+            - name: OCI_BUCKET
+              value: "bucket-relay-bucket"
+            - name: OCI_OBJECT
+              value: "swift-oke-test.txt"
+            # Optional: set the Object Storage namespace to skip the getNamespace()
+            # call (and the extra permission it needs). Find it with `oci os ns get`.
+            - name: OCI_NAMESPACE
+              value: "<tenancy-object-storage-namespace>"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+      # If pulling from a private OCIR repo, create a docker-registry secret and
+      # reference it here:
+      # imagePullSecrets:
+      #   - name: ocir-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swift-oke
+  namespace: default
+spec:
+  selector:
+    app: swift-oke
+  ports:
+    - port: 80
+      targetPort: 8080
+  # Use LoadBalancer for a public IP, or ClusterIP + `kubectl port-forward` for a
+  # quick local test without provisioning a load balancer.
+  type: ClusterIP
