@@ -95,16 +95,21 @@ docker push "$REGISTRY/swift-oke:latest"
 
 Edit `deploy/swift-oke.yaml` — set the `image`, `OCI_REGION`, and (if your bucket differs) `OCI_BUCKET`/`OCI_OBJECT`.
 
-The bundled Service is a **public OCI Load Balancer** tuned for a virtual-nodes cluster. On virtual nodes it only comes up healthy once the LB subnet security rules and the TLS secret exist — set those up first (next section). For an internal-only test, swap the Service for the minimal `ClusterIP` variant shown in the manifest and reach it in-cluster instead.
+The bundled Service is a **public OCI Load Balancer** tuned for a virtual-nodes cluster — this is **Option B** in the next section, and it needs the LB subnet security rules (and a TLS secret) before it serves cleanly. If you plan to use **Option A** (a real Let's Encrypt cert via ingress-nginx, recommended), or just want an internal-only test, swap this Service for the minimal `ClusterIP` variant shown in the manifest and reach the app in-cluster instead. Either way, read *Expose it publicly* next before wiring up TLS.
 
 ```bash
 kubectl apply -f deploy/swift-oke.yaml
 kubectl rollout status deploy/swift-oke
 ```
 
-## Expose it publicly (HTTPS via an OCI Load Balancer)
+## Expose it publicly (HTTPS)
 
-Applying the manifest provisions a **flexible OCI Load Balancer** with its own public IP (distinct from the cluster's API-server endpoint on `:6443`, which never routes to your workloads), terminates **TLS at the LB** on 443, and forwards to the **pods** as backends. It works on a Quick-Create **virtual-nodes-only** cluster — but only once two things exist that OKE does *not* set up for you on virtual nodes: the **VCN security rules** and the **TLS secret**.
+Two ways to get a public HTTPS URL, both fronted by a **flexible OCI Load Balancer** with its own public IP (distinct from the cluster's API-server endpoint on `:6443`, which never routes to your workloads):
+
+- **Option A (recommended): a real Let's Encrypt certificate** via ingress-nginx + cert-manager. TLS terminates inside the cluster, and certificates **auto-renew** with no manual steps and no `-k`. The OCI LB only passes TCP through, so nothing terminates TLS on OCI — which sidesteps the immutable-LB-certificate problem of the other option.
+- **Option B: TLS terminated at the OCI Load Balancer** itself. No extra components, but you manage the certificate yourself — self-signed, or a real one you rotate by hand.
+
+Either way the same virtual-nodes pieces sit underneath, so the next three sections — **how load balancing works**, **security rules**, and **routing** — apply to both. Read those first, then jump to Option A or Option B.
 
 ### How load balancing actually works on virtual nodes
 
@@ -139,6 +144,8 @@ flowchart LR
 
 > `externalTrafficPolicy: Local` (client-IP preservation) is **not supported** on virtual nodes — keep the default `Cluster`.
 
+Option A works the same way, one layer out: the OCI LB's backends are then the **ingress-nginx** pods (still `<pod-ip>:<NodePort>` with `/healthz:10256`), and nginx routes to the swift-oke ClusterIP Service inside the cluster.
+
 ### Security rules
 
 OKE **never** manages LB security rules on virtual nodes (management mode is effectively `None`), so you create them yourself. The LB subnet must allow the listeners in and the traffic + health check out to the node/pod subnet; the node/pod subnet must allow that traffic + health check in:
@@ -172,7 +179,88 @@ The Quick Create wizard also sets up the route tables correctly, so this is a **
 
 The pod subnet must route out through the **NAT gateway** (not an internet gateway) plus the **service gateway**, per the [virtual-nodes network docs](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengnetworkconfig-virtualnodes.htm).
 
-### TLS secret
+### Option A (recommended): a real certificate with ingress-nginx + cert-manager + Let's Encrypt
+
+TLS terminates inside the cluster at **ingress-nginx**, and **cert-manager** obtains and auto-renews a real **Let's Encrypt** certificate over HTTP-01. The OCI LB fronting the ingress-nginx Service only passes TCP 80/443 through, so **nothing terminates TLS on OCI** — and the immutable-LB-certificate gotcha simply doesn't exist here.
+
+**1. Reserve a public IP** so the address — and the DNS name and certificates bound to it — survive Service/LB recreation:
+
+```bash
+oci network public-ip create --compartment-id <compartment> \
+  --lifetime RESERVED --display-name swift-oke-ingress-ip --profile <profile>
+# note the assigned "ip-address", e.g. 137.131.40.124 (free while it stays assigned)
+```
+
+**2. Install ingress-nginx, patched for virtual nodes _before_ it creates its LB.** Applying the manifest unpatched provisions a throwaway LB with an ephemeral IP and the unsupported `Local` policy, which then has to be recreated — so edit first, apply second:
+
+```bash
+curl -sL https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/cloud/deploy.yaml \
+  -o ingress-nginx.yaml
+```
+
+In `ingress-nginx.yaml`, find the one `Service` named `ingress-nginx-controller` and set these fields on it:
+
+```yaml
+metadata:
+  annotations:
+    service.beta.kubernetes.io/oci-load-balancer-security-list-management-mode: "None"
+    service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "100"
+spec:
+  loadBalancerIP: <reserved-ip>          # from step 1 — pins the LB to the reserved IP
+  externalTrafficPolicy: Cluster          # manifest ships "Local", which is unsupported on virtual nodes
+```
+
+Then apply and wait for the LB to take the reserved IP:
+
+```bash
+kubectl apply -f ingress-nginx.yaml
+kubectl -n ingress-nginx get svc ingress-nginx-controller -w   # EXTERNAL-IP -> <reserved-ip>
+```
+
+**3. Ensure the security rules.** They're subnet-scoped, so the same six rules from Option B's script already cover the ingress LB — run it if you haven't:
+
+```bash
+./deploy/lb-security-rules.sh <compartment-ocid> --profile <profile>
+```
+
+**4. Install cert-manager:**
+
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.21.0/cert-manager.yaml
+kubectl -n cert-manager rollout status deploy/cert-manager-webhook
+```
+
+ingress-nginx and cert-manager run as ordinary pods on virtual nodes; their images are multi-arch, so arm64 nodes are fine.
+
+**5. Point the swift-oke Service at ClusterIP.** Option A fronts the app with the Ingress, so swift-oke needs only the in-cluster `ClusterIP` Service (the commented variant in `deploy/swift-oke.yaml`, port 80 → 8080), not the LoadBalancer one. If you previously applied the LB Service, switching it to ClusterIP deletes that direct LB automatically — leaving exactly one LB, the ingress one.
+
+**6. Issue the certificate.** Fill `<ACME_EMAIL>` and `<INGRESS_HOST>` in `deploy/ingress-letsencrypt.yaml`, then apply:
+
+```bash
+kubectl apply -f deploy/ingress-letsencrypt.yaml
+```
+
+For `<INGRESS_HOST>`, [sslip.io](https://sslip.io) gives zero-setup DNS — `swift-oke.<reserved-ip-with-dashes>.sslip.io` resolves straight to the reserved IP (e.g. `swift-oke.137-131-40-124.sslip.io`), so no domain ownership is needed. For your own domain, set the host to it and point an A record at the reserved IP.
+
+**7. Verify** — a real, fully verified certificate (note: no `-k`):
+
+```bash
+HOST=swift-oke.137-131-40-124.sslip.io
+kubectl get certificate swift-oke-le-tls -w    # wait for READY=True (~1-2 min the first time)
+curl    https://$HOST/health                   # -> ok  (full chain verified)
+curl    https://$HOST/file                      # -> object text, read via workload identity
+curl -I http://$HOST/                           # -> 308 redirect to https (nginx does this automatically)
+```
+
+cert-manager renews `swift-oke-le-tls` well before expiry and nginx hot-reloads it — there is no LB certificate to rotate, so the Option B immutable-cert dance never applies.
+
+### Option B: TLS terminated at the OCI Load Balancer
+
+No ingress controller or cert-manager: the OCI LB terminates TLS directly using a Kubernetes TLS secret, and you own the certificate lifecycle. Apply the LoadBalancer Service in `deploy/swift-oke.yaml` (its default) and give it a cert.
+
+#### TLS secret
 
 The Service terminates TLS at the LB using a Kubernetes TLS secret named `swift-oke-tls`. For a quick start, self-sign a cert:
 
@@ -194,7 +282,7 @@ kubectl annotate svc swift-oke \
   service.beta.kubernetes.io/oci-load-balancer-tls-secret=swift-oke-tls-2 --overwrite
 ```
 
-### Deploy and verify
+#### Deploy and verify
 
 ```bash
 kubectl apply -f deploy/swift-oke.yaml
@@ -233,7 +321,8 @@ oci lb backend-set-health get --load-balancer-id <lb-ocid> \
 | `UnAvailableLoadBalancer — There are no available nodes for LoadBalancer` events | Cosmetic on virtual nodes — the node-registration path is disabled by the `exclude-from-external-load-balancers` label | Ignore; the pods-as-backends path serves traffic |
 | LB serves for ~30s then returns empty replies, repeatedly | Health-check **egress** rule missing or pointed at the wrong subnet, so the OCI health checker can't reach `:10256` | Point LB-subnet egress TCP 10256 at the **node/pod** CIDR; re-run `lb-security-rules.sh` |
 | `409 ... Token collision` on rapid Service create/delete | The OCI cloud-controller is mid-reconcile | Let the reconcile settle (~30-60s), then re-apply |
-| Updated the TLS secret but the LB serves the old certificate | OCI LB certificates are immutable by name; the CCM names them after the secret | Create a secret under a **new** name and update the `oci-load-balancer-tls-secret` annotation |
+| (Option B) Updated the TLS secret but the LB serves the old certificate | OCI LB certificates are immutable by name; the CCM names them after the secret | Create a secret under a **new** name and update the `oci-load-balancer-tls-secret` annotation |
+| (Option A) Certificate stays `READY=False` / challenge stuck `Pending` | HTTP-01 can't reach nginx, or a DNS/rate-limit issue | `kubectl get certificate,order,challenge -A` and `kubectl describe` the challenge; confirm `http://<host>/` reaches nginx through the LB (backend health OK, `lb-security-rules.sh` applied); on shared **sslip.io** hosts you can hit Let's Encrypt rate limits — use the staging issuer while testing |
 | `kubectl port-forward` / `kubectl exec` return `501 not implemented` | Not supported on virtual nodes | Test via the LB, or run a one-shot curl `Pod`/`Job` hitting the ClusterIP `http://swift-oke.default.svc.cluster.local` and read `kubectl logs` (`logs` works on virtual nodes; `port-forward`/`exec` do not) |
 
 ### References
@@ -242,6 +331,10 @@ oci lb backend-set-health get --load-balancer-id <lb-ocid> \
 - [Network resource configuration for virtual nodes](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengnetworkconfig-virtualnodes.htm) — the exact security rules
 - [Specifying load balancer / network load balancer annotations](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengconfiguringloadbalancersnetworkloadbalancers-subtopic.htm) — pods-as-backends annotations
 - [Getting started: best practices for OKE virtual nodes](https://blogs.oracle.com/cloud-infrastructure/getting-started-best-practices-oke-virtual-nodes)
+- [cert-manager](https://cert-manager.io/docs/) — ACME issuers and HTTP-01 (Option A)
+- [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) — the controller and its cloud provider manifest (Option A)
+- [Let's Encrypt — HTTP-01 challenge](https://letsencrypt.org/docs/challenge-types/#http-01-challenge)
+- [sslip.io](https://sslip.io) — wildcard DNS that maps any `<name>.<ip>.sslip.io` to that IP
 
 ## Notes
 

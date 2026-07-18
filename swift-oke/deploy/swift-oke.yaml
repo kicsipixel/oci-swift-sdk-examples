@@ -69,17 +69,19 @@ spec:
       # imagePullSecrets:
       #   - name: ocir-secret
 ---
-# Public HTTPS via an OCI Load Balancer, with TLS terminated at the LB.
+# Option B (README "Expose it publicly") — public HTTPS with TLS terminated
+# directly at an OCI Load Balancer. Option A instead fronts the app with
+# ingress-nginx + cert-manager for a real Let's Encrypt cert (see
+# deploy/ingress-letsencrypt.yaml); that path uses the ClusterIP variant below.
 #
 # This is tuned for a Quick-Create, VIRTUAL-NODES-only cluster. On virtual nodes
 # the LB backends are always the PODS (as <pod-ip>:<NodePort>), not the worker
-# nodes — that's built-in, no annotation needed. See the README section "Expose
-# it publicly" for the mechanism and the required subnet security rules (OKE
-# never manages those for you on virtual nodes).
+# nodes — that's built-in, no annotation needed. See the README for the mechanism
+# and the required subnet security rules (OKE never manages those on virtual nodes).
 #
-# For an internal-only test without provisioning an LB, replace this whole
-# Service with a minimal ClusterIP one and reach it in-cluster at
-# http://swift-oke.default.svc.cluster.local (see the README):
+# For Option A — or any internal-only test without provisioning this LB — replace
+# this whole Service with a minimal ClusterIP one, reachable in-cluster at
+# http://swift-oke.default.svc.cluster.local:
 #   spec:
 #     type: ClusterIP
 #     selector: { app: swift-oke }

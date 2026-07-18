@@ -1,0 +1,69 @@
+# swift-oke — Option A: a real Let's Encrypt certificate via ingress-nginx + cert-manager.
+#
+# TLS terminates inside the cluster at ingress-nginx (NOT at the OCI Load
+# Balancer); cert-manager obtains and auto-renews the certificate over HTTP-01.
+# Because the cert lives in the cluster and the OCI LB only passes TCP through,
+# this sidesteps the immutable-LB-certificate problem of the direct-LB path.
+#
+# Prerequisites (see the README section "Expose it publicly", Option A):
+#   1. A reserved public IP  (oci network public-ip create ... --lifetime RESERVED).
+#   2. ingress-nginx installed, its controller Service patched for virtual nodes
+#      BEFORE apply (security-list-management None, flexible shape,
+#      spec.loadBalancerIP = the reserved IP, externalTrafficPolicy: Cluster).
+#   3. cert-manager installed (v1.21.0+).
+#   4. The swift-oke Deployment + a ClusterIP Service on port 80 (the commented
+#      variant in swift-oke.yaml). The Ingress below routes to it.
+#
+# Replace every <PLACEHOLDER> before applying.
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # Let's Encrypt production endpoint. While testing, prefer the staging endpoint
+    # (https://acme-staging-v02.api.letsencrypt.org/directory) to avoid burning the
+    # tight production rate limits — staging certs are untrusted (curl -k) but free
+    # of quota worries. This matters especially on shared sslip.io hosts (below).
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: <ACME_EMAIL>                    # expiry notices; must be a valid address
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key   # cert-manager stores the ACME account key here
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx        # cert-manager solves the challenge through nginx
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: swift-oke
+  namespace: default
+  annotations:
+    # cert-manager watches this Ingress and issues/renews the cert into tls.secretName.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - <INGRESS_HOST>                   # e.g. swift-oke.137-131-40-124.sslip.io
+      secretName: swift-oke-le-tls         # cert-manager creates/updates this secret
+  rules:
+    - host: <INGRESS_HOST>
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: swift-oke            # the ClusterIP Service from swift-oke.yaml
+                port:
+                  number: 80
+# Choosing <INGRESS_HOST>:
+#   - sslip.io (zero setup): <name>.<reserved-ip-with-dashes>.sslip.io resolves to
+#     that IP with no DNS to configure — e.g. swift-oke.137-131-40-124.sslip.io.
+#     Fine for demos, but sslip.io is a shared domain, so it shares Let's Encrypt
+#     rate limits with everyone else using it.
+#   - Your own domain: set both <INGRESS_HOST> values to it and point an A record
+#     at the reserved public IP. Gives you dedicated rate limits and a clean name.
