@@ -38,8 +38,10 @@ spec:
       automountServiceAccountToken: true
       containers:
         - name: swift-oke
-          # Push to any registry your cluster can pull from. Docker Hub example:
-          image: docker.io/<your-dockerhub-user>/swift-oke:latest
+          # Ready-to-run published image (linux/arm64 — matches OKE virtual nodes'
+          # Arm pods). Swap for your own build on any registry the cluster can pull
+          # from; see the README "Build & push the image" section.
+          image: docker.io/iliasaz/swift-oke:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

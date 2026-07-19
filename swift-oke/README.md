@@ -74,6 +74,8 @@ Configuration (env, all optional): `OCI_BUCKET` (default `bucket-relay-bucket`),
 
 ## Build & push the image
 
+> **Skip this section if you just want to run the example** — a ready-made image is published at [`docker.io/iliasaz/swift-oke:latest`](https://hub.docker.com/r/iliasaz/swift-oke) (linux/arm64, which matches OKE virtual nodes' Arm pods), and the deployment manifest already uses it. Build your own if you're on amd64 nodes or changing the code.
+
 The `Dockerfile` builds from the SDK as a **remote** dependency, so the container build can fetch it. Before building, point `Package.swift` at the pushed SDK (the checked-in default is a local path for development):
 
 ```swift
@@ -93,7 +95,7 @@ docker push "$REGISTRY/swift-oke:latest"
 
 ## Deploy
 
-Edit `deploy/swift-oke.yaml` — set the `image`, `OCI_REGION`, and (if your bucket differs) `OCI_BUCKET`/`OCI_OBJECT`.
+Edit `deploy/swift-oke.yaml` — set `OCI_REGION`, (if your bucket differs) `OCI_BUCKET`/`OCI_OBJECT`, and the `image` if you built your own (the default is the published [`iliasaz/swift-oke`](https://hub.docker.com/r/iliasaz/swift-oke) arm64 image).
 
 The bundled Service is a **public OCI Load Balancer** tuned for a virtual-nodes cluster — this is **Option B** in the next section, and it needs the LB subnet security rules (and a TLS secret) before it serves cleanly. If you plan to use **Option A** (a real Let's Encrypt cert via ingress-nginx, recommended), or just want an internal-only test, swap this Service for the minimal `ClusterIP` variant shown in the manifest and reach the app in-cluster instead. Either way, read *Expose it publicly* next before wiring up TLS.
 
