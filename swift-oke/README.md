@@ -5,7 +5,7 @@ A small [Hummingbird](https://github.com/hummingbird-project/hummingbird) REST s
 ## What it demonstrates
 
 - **OKE Workload Identity** end-to-end with [`OCIKit`](https://github.com/iliasaz/oci-swift-sdk): `OKEWorkloadIdentitySigner.fromWorkloadIdentity()` exchanges the pod's projected service-account token for a resource principal session token (RPST) at the in-cluster *proxymux* endpoint, then signs Object Storage requests with it.
-- **In-process custom-CA TLS**, the way the Java/Python/Go SDKs do it. The proxymux TLS certificate is signed by the in-cluster Kubernetes CA (not a public CA). The opt-in `OCIKitWorkloadIdentity` product pins that CA **in-process** via AsyncHTTPClient + NIOSSL (BoringSSL) — so there is **no `update-ca-certificates` step, no cluster CA install, nothing extra in the image**. It just reads the CA that Kubernetes already projects into every pod.
+- **In-process custom-CA TLS**. The proxymux TLS certificate is signed by the in-cluster Kubernetes CA (not a public CA). The opt-in `OCIKitWorkloadIdentity` product pins that CA **in-process** via AsyncHTTPClient + NIOSSL (BoringSSL) — so there is **no `update-ca-certificates` step, no cluster CA install, nothing extra in the image**. It just reads the CA that Kubernetes already projects into every pod.
 
 ## Architecture
 
@@ -102,6 +102,8 @@ kubectl apply -f deploy/swift-oke.yaml
 kubectl rollout status deploy/swift-oke
 ```
 
+> The irony isn't lost on us: this example is nominally about **Workload Identity** — running a Swift container on OKE and letting it reach other OCI services with no keys and no config — yet most of this page is about coaxing OKE's networking into letting anyone *reach* the container in the first place. That ratio is a faithful reflection of the lived experience.
+
 ## Expose it publicly (HTTPS)
 
 Two ways to get a public HTTPS URL, both fronted by a **flexible OCI Load Balancer** with its own public IP (distinct from the cluster's API-server endpoint on `:6443`, which never routes to your workloads):
@@ -182,6 +184,39 @@ The pod subnet must route out through the **NAT gateway** (not an internet gatew
 ### Option A (recommended): a real certificate with ingress-nginx + cert-manager + Let's Encrypt
 
 TLS terminates inside the cluster at **ingress-nginx**, and **cert-manager** obtains and auto-renews a real **Let's Encrypt** certificate over HTTP-01. The OCI LB fronting the ingress-nginx Service only passes TCP 80/443 through, so **nothing terminates TLS on OCI** — and the immutable-LB-certificate gotcha simply doesn't exist here.
+
+Here's the whole path (the shared diagram earlier zooms into the kube-proxy/NodePort detail on one pod; this one is the map):
+
+```mermaid
+flowchart LR
+  client["Internet client"]
+  le["Let's Encrypt<br/>(ACME CA)"]
+
+  subgraph vcn["VCN"]
+    subgraph lbnet["public LB subnet — 10.0.20.0/24"]
+      lb["OCI Load Balancer<br/>reserved public IP<br/>TCP 80/443 pass-through, no TLS"]
+    end
+    subgraph podnet["private node/pod subnet — 10.0.10.0/24"]
+      nginx["ingress-nginx pod<br/>terminates TLS · routes by host"]
+      app["swift-oke pod :8080<br/>(ClusterIP service)"]
+      cm["cert-manager"]
+      sec[["secret: swift-oke-le-tls"]]
+    end
+  end
+
+  client -- "HTTPS :443" --> lb
+  lb -- "pod-ip:NodePort" --> nginx
+  nginx -- "ClusterIP :80 → app :8080" --> app
+
+  le -. "HTTP-01 GET /.well-known :80" .-> lb
+  lb -. ":80 → pod-ip:NodePort" .-> nginx
+  nginx -. "route challenge to solver" .-> cm
+  cm -. "renew" .-> sec
+  sec -. "hot-reload" .-> nginx
+  lb -. "health check → pod-ip:10256" .-> nginx
+```
+
+Solid arrows are request traffic; dashed arrows are the certificate machinery and health checks. Routing (see *Routing* above): the LB subnet reaches the internet via an Internet Gateway, the pod subnet egresses via NAT + Service gateways.
 
 **1. Reserve a public IP** so the address — and the DNS name and certificates bound to it — survive Service/LB recreation:
 
