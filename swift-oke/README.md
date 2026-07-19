@@ -204,16 +204,16 @@ flowchart LR
     end
   end
 
-  client -- "HTTPS :443" --> lb
-  lb -- "pod-ip:NodePort" --> nginx
-  nginx -- "ClusterIP :80 → app :8080" --> app
+  client -->|"HTTPS :443"| lb
+  lb -->|"pod-ip:NodePort"| nginx
+  nginx -->|"ClusterIP :80 → app :8080"| app
 
-  le -. "HTTP-01 GET /.well-known :80" .-> lb
-  lb -. ":80 → pod-ip:NodePort" .-> nginx
-  nginx -. "route challenge to solver" .-> cm
-  cm -. "renew" .-> sec
-  sec -. "hot-reload" .-> nginx
-  lb -. "health check → pod-ip:10256" .-> nginx
+  le -.->|"HTTP-01 GET /.well-known :80"| lb
+  lb -.->|":80 → pod-ip:NodePort"| nginx
+  nginx -.->|"route challenge to solver"| cm
+  cm -.->|"renew"| sec
+  sec -.->|"hot-reload"| nginx
+  lb -.->|"health check → pod-ip:10256"| nginx
 ```
 
 Solid arrows are request traffic; dashed arrows are the certificate machinery and health checks. Routing (see *Routing* above): the LB subnet reaches the internet via an Internet Gateway, the pod subnet egresses via NAT + Service gateways.
@@ -291,9 +291,49 @@ curl -I http://$HOST/                           # -> 308 redirect to https (ngin
 
 cert-manager renews `swift-oke-le-tls` well before expiry and nginx hot-reloads it — there is no LB certificate to rotate, so the Option B immutable-cert dance never applies.
 
+#### Why not terminate TLS at the OCI Load Balancer?
+
+The OCI LB *can* terminate TLS — that's exactly what Option B does. The hard part is getting a **Let's Encrypt** certificate into it and keeping it there: LE certs expire after 90 days and want renewing about every 60, so "set it once" isn't an option. Three things make LB termination the wrong default here:
+
+1. **The immutable-certificate behavior fights cert-manager.** As Option B describes, the CCM names the LB certificate after the Kubernetes secret and LB certs are **immutable by name** — but cert-manager's entire model is "renew the same secret in place." Point it at the LB and it would dutifully rewrite a secret the LB never re-reads, leaving the listener serving the *expired* cert. Automating it means building bespoke rename-and-reannotate glue whose failure mode is "site down with an expired cert two months from now." With nginx, the LB never sees the cert: cert-manager renews the secret and nginx hot-reloads it.
+2. **sslip.io forces HTTP-01, and HTTP-01 needs path routing.** With no domain of your own, DNS-01 is off the table — sslip.io is a static resolver with no TXT records and no zone you control. That leaves HTTP-01, which serves a token at `http://<host>/.well-known/acme-challenge/…`. But with the plain LB Service, port 80 goes straight to the Swift app, so *something* has to route `/.well-known` to a challenge solver — and that something is an ingress controller (cert-manager's HTTP-01 solver is built to inject routes into one). No domain → sslip.io → HTTP-01 only → you need an ingress anyway.
+3. **OCI has no managed public-certificate service.** AWS has ACM and GCP has managed certs that issue and self-renew right on the load balancer; OCI Certificates only issues from *your own private CA* (not browser-trusted), and public certs must be imported by hand with no ACME integration. If OCI had an ACM equivalent, terminating at the LB would be the obvious call.
+
+What you trade: two extra in-cluster components (ingress-nginx, cert-manager) and one extra proxy hop. What you get: hands-off cert automation, an automatic HTTP→HTTPS redirect, and one LB that can front many services. The cost is identical — still exactly one load balancer.
+
+> **With a real domain in a DNS zone you control** (e.g. OCI DNS), DNS-01 becomes available and argument #2 disappears — LE-at-the-LB is then genuinely *feasible*. But you'd still be writing the renewal glue for #1, which is why the boring cert-manager + ingress stack stays the default recommendation.
+
 ### Option B: TLS terminated at the OCI Load Balancer
 
 No ingress controller or cert-manager: the OCI LB terminates TLS directly using a Kubernetes TLS secret, and you own the certificate lifecycle. Apply the LoadBalancer Service in `deploy/swift-oke.yaml` (its default) and give it a cert.
+
+```mermaid
+flowchart LR
+  client["Internet client"]
+  ccm["OCI cloud-controller<br/>(CCM)"]
+  sec[["k8s secret: swift-oke-tls"]]
+
+  subgraph vcn["VCN"]
+    subgraph lbnet["public LB subnet — 10.0.20.0/24"]
+      lb["OCI Load Balancer<br/>listener :443 terminates TLS<br/>serves the OCI LB certificate"]
+    end
+    subgraph podnet["private node/pod subnet — 10.0.10.0/24"]
+      subgraph pod["swift-oke pod"]
+        kp["kube-proxy<br/>NodePort DNAT + /healthz:10256"]
+        app["app :8080"]
+      end
+    end
+  end
+
+  client -->|"HTTPS :443 (TLS)"| lb
+  lb -->|"decrypt → pod-ip:NodePort"| kp
+  kp -->|"DNAT"| app
+  lb -.->|"health check → pod-ip:10256"| kp
+  sec -.->|"CCM reads once"| ccm
+  ccm -.->|"creates LB cert (immutable by name)"| lb
+```
+
+Here TLS terminates at the LB, so the certificate is an **OCI LB certificate** the CCM mints from the `swift-oke-tls` secret — which is why replacing it means the rename-and-reannotate dance below.
 
 #### TLS secret
 
