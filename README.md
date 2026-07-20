@@ -28,6 +28,30 @@ Key features:
 
 [View BucketView →](https://github.com/kicsipixel/oci-swift-sdk-examples/tree/main/BucketView)
 
+### BucketRelay
+
+**BucketRelay** is a server-side example: a small [Hummingbird](https://github.com/hummingbird-project/hummingbird) REST service that uploads and downloads files to OCI Object Storage. It runs as an **OCI Container Instance** and authenticates with **Resource Principals** — no API keys or config file in the image.
+
+Key features:
+- Deploys a Swift server as a container with no VM/OS to manage (Container Instances)
+- Authenticates from inside the container via `ResourcePrincipalSigner` (keyless)
+- Uploads, downloads, lists, and deletes objects through a public REST API
+- Includes scripts for the required networking, bucket, dynamic group, and policy
+
+[View BucketRelay →](./BucketRelay)
+
+### swift-oke
+
+**swift-oke** is a server-side example: a small [Hummingbird](https://github.com/hummingbird-project/hummingbird) REST service that reads a file from OCI Object Storage and returns its text. It runs as a pod in an **OKE (Kubernetes) cluster** and authenticates with **OKE Workload Identity** — no API keys or config file, just the pod's Kubernetes service account.
+
+Key features:
+- Authenticates from inside an OKE pod via `OKEWorkloadIdentitySigner` (keyless)
+- Pins the in-cluster Kubernetes CA **in-process** (opt-in `OCIKitWorkloadIdentity` product) — no `update-ca-certificates`, no cluster CA step
+- Reads an object and serves its content over a REST API
+- Includes a Dockerfile and a Kubernetes deployment manifest
+
+[View swift-oke →](./swift-oke)
+
 ---
 
 ## 🚀 Getting Started

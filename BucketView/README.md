@@ -10,6 +10,7 @@
   <img src="./img/BucketView.png" alt="BucketView UI" width="59%">
   <img src="./img/Settings.png" alt="BucketView Settings" width="40%">
 </p>
+
 ---
 
 ## Setup Instructions

@@ -1,0 +1,6 @@
+.build/
+.git/
+deploy/
+img/
+README.md
+*.md

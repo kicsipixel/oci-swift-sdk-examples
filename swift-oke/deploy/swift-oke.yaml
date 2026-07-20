@@ -1,0 +1,120 @@
+# swift-oke — OKE Workload Identity demo.
+#
+# Prerequisites (one-time; see README for the OCI-side commands):
+#   1. An ENHANCED OKE cluster (workload identity requires an enhanced cluster).
+#   2. A condition-based `any-user` IAM policy authorizing this pod's workload
+#      identity (namespace 'default', service account 'swift-oke', cluster OCID)
+#      to read the bucket. OKE Workload Identity does NOT use dynamic groups.
+#
+# No CA/trust-store step is needed: the signer pins the cluster CA in-process.
+# Replace every <PLACEHOLDER> before applying.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: swift-oke
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swift-oke
+  namespace: default
+  labels:
+    app: swift-oke
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swift-oke
+  template:
+    metadata:
+      labels:
+        app: swift-oke
+    spec:
+      serviceAccountName: swift-oke
+      # Projects the SA token (/var/run/secrets/.../token) and the cluster CA
+      # (/var/run/secrets/.../ca.crt) into the pod. Required for workload identity.
+      automountServiceAccountToken: true
+      containers:
+        - name: swift-oke
+          # Ready-to-run published image (linux/arm64 — matches OKE virtual nodes'
+          # Arm pods). Swap for your own build on any registry the cluster can pull
+          # from; see the README "Build & push the image" section.
+          image: docker.io/iliasaz/swift-oke:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OCI_REGION
+              value: "<region>" # e.g. us-phoenix-1
+            - name: OCI_BUCKET
+              value: "bucket-relay-bucket"
+            - name: OCI_OBJECT
+              value: "swift-oke-test.txt"
+            # Optional: set the Object Storage namespace to skip the getNamespace()
+            # call (and the extra permission it needs). Find it with `oci os ns get`.
+            - name: OCI_NAMESPACE
+              value: "<tenancy-object-storage-namespace>"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+      # If pulling from a private OCIR repo, create a docker-registry secret and
+      # reference it here:
+      # imagePullSecrets:
+      #   - name: ocir-secret
+---
+# Option B (README "Expose it publicly") — public HTTPS with TLS terminated
+# directly at an OCI Load Balancer. Option A instead fronts the app with
+# ingress-nginx + cert-manager for a real Let's Encrypt cert (see
+# deploy/ingress-letsencrypt.yaml); that path uses the ClusterIP variant below.
+#
+# This is tuned for a Quick-Create, VIRTUAL-NODES-only cluster. On virtual nodes
+# the LB backends are always the PODS (as <pod-ip>:<NodePort>), not the worker
+# nodes — that's built-in, no annotation needed. See the README for the mechanism
+# and the required subnet security rules (OKE never manages those on virtual nodes).
+#
+# For Option A — or any internal-only test without provisioning this LB — replace
+# this whole Service with a minimal ClusterIP one, reachable in-cluster at
+# http://swift-oke.default.svc.cluster.local:
+#   spec:
+#     type: ClusterIP
+#     selector: { app: swift-oke }
+#     ports: [{ port: 80, targetPort: 8080 }]
+apiVersion: v1
+kind: Service
+metadata:
+  name: swift-oke
+  namespace: default
+  annotations:
+    # OKE never manages LB subnet security rules on virtual nodes — we create them
+    # ourselves (see deploy/lb-security-rules.sh). "None" stops OKE from trying.
+    service.beta.kubernetes.io/oci-load-balancer-security-list-management-mode: "None"
+    # Flexible shape: min/max bandwidth in Mbps (bill scales with the min).
+    service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "100"
+    # Terminate TLS at the LB on 443 using the Kubernetes TLS secret below.
+    service.beta.kubernetes.io/oci-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/oci-load-balancer-tls-secret: "swift-oke-tls"
+spec:
+  type: LoadBalancer
+  # For a stable address, reserve a public IP and pin it here (and set the LB
+  # subnet's ingress accordingly):
+  # loadBalancerIP: "<RESERVED_PUBLIC_IP>"
+  selector:
+    app: swift-oke
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: https
+      port: 443
+      targetPort: 8080
