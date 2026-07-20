@@ -7,7 +7,8 @@
 **FileLift** is a lightweight macOS client for uploading files to [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/europe/cloud/) Object Storage. Designed with simplicity and elegance in mind, it provides a drag-and-drop interface for seamless file transfers.
 
 <p align="center">
-  <img src="./img/MainScreen@2x.png" alt="FileLift UI">
+  <img src="./img/FileLift1.png" width="45%" alt="FileLift UI">
+    <img src="./img/FileLift2.png" width="45%" alt="FileLift UI">
 </p>
 
 
@@ -43,7 +44,7 @@ Start the FileLift application and navigate to **Settings...**. Enter your `comp
 - [ ] Multiple files upload
 - [ ] Folder upload support
 - [x] ~~Automatic update or confirmation is needed~~
-- [ ] Preauthenticated bucket
+- [x] ~~Preauthenticated bucket~~
 
 ---
 
