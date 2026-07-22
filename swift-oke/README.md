@@ -83,7 +83,10 @@ Set `OCI_LOG_ID` and/or the `OCI_METRICS_NAMESPACE` + `OCI_COMPARTMENT_ID` pair 
 
 - **Logs.** `LoggingSystem.bootstrap` installs a `MultiplexLogHandler` of the console handler (so `kubectl logs` keeps showing everything) and `OCILogHandler`, which batches records and flushes every 5s.
 - **Metrics.** `MetricsSystem.bootstrap(OCIMetricsFactory(...))`, plus a small middleware recording `http_requests_total` (counter) and `http_request_duration` (timer) per request, dimensioned by route *template*, an allow-listed HTTP method, and status *class* — deliberately bounded, since each distinct combination mints its own metric stream. The factory stamps `app` and `pod` onto every stream.
+- **A domain metric.** `bytes_served_total` (counter) adds up the payload bytes actually read out of Object Storage, dimensioned by `bucket` alone. It is incremented in the store's read path rather than in the middleware, because that is the only place the byte count exists — upstack the middleware holds a `Response` whose body is a stream it must not consume. The object *name* is deliberately **not** a dimension: it is the caller's to choose, so labelling by it would mint one metric stream per distinct URL ever requested.
 - **Shutdown.** A `ServiceLifecycle` service drains both buffers on SIGTERM, after the HTTP server has stopped. `deploy/swift-oke.yaml` raises `terminationGracePeriodSeconds` to 45 to cover it.
+
+> **A counter is exported as the per-step delta, not a running total.** Ask for the cumulative figure in the query — `bytes_served_total[1m].sum()` summed over your window — rather than expecting a monotonic number from the metric itself. That is the shape you want across restarts: an in-process running total would reset to zero on every rollout and read as a cliff. It also means an idle step posts nothing at all instead of a flat line of zeroes.
 
 Neither backend ever reports a delivery failure by throwing — a wrong log OCID or a missing policy statement looks exactly like a healthy pod. `GET /telemetry` is how you find out:
 
@@ -155,6 +158,19 @@ oci monitoring metric-data summarize-metrics-data --profile <profile> \
 ```
 
 Real result: exactly **10 streams** — `{http_requests_total, http_request_duration}` × 5 routes (`/`, `/file`, `/files/{name}`, `/health`, `/telemetry`), each dimensioned `{app, method, pod, route, status_class}` — confirming the route-template cardinality guard works (`/files/{name}` stayed one stream, never one per filename curled). `http_requests_total[1m].sum()` in the probe's 1-minute bucket: `route=/` → 10, `route=/file` → 10, `route=/files/{name}` (`status_class=4xx`) → 8, `route=/telemetry` → 1 — an exact match for the traffic driven. `http_request_duration[1m].sum()` (unit `ns`, from the response's `metadata.unit`) in the same bucket: `/file` ≈ 30.1ms avg over 10 requests, `/files/{name}` 4xx ≈ 13.0ms avg over 8, `/` ≈ 22.4µs avg, `/telemetry` ≈ 42.5µs for its one request — both a counter and a timer present for every recorded route, values non-zero and magnitude-plausible for what each route does.
+
+`bytes_served_total` was checked the same way, against a known quantity — 10 requests for a 36-byte object, plus 10 requests for objects that do not exist:
+
+```bash
+oci monitoring metric-data summarize-metrics-data --profile <profile> \
+  --compartment-id <compartment_ocid> --namespace swift_oke \
+  --query-text 'bytes_served_total[1m].sum()' \
+  --start-time 2026-07-22T05:51:00Z --end-time 2026-07-22T05:56:00Z
+```
+
+Real result: a single datapoint of **360 B** — exactly 10 × 36, with the ten 404s contributing nothing, confirming the counter sits on the success path only.
+
+> ⚠️ **Don't measure across a rollout.** An earlier run of this same check came back 396 B against an expected 576 B. The counter was right; the *test* was wrong. `kubectl rollout status` had already returned success while the old pod was still draining behind the ingress, so it served 5 of the 16 requests — on the previous image, which had no `bytes_served_total` at all. The per-pod split in `http_requests_total` (5 on the old pod, 11 on the new, 16 total) is what pinned it down. Wait until `kubectl get pods -l app=swift-oke` shows exactly one pod before driving verification traffic, and treat the `pod` dimension as load-bearing when a number does not reconcile.
 
 Allow 1-2 minutes after traffic for both services to index before querying — see the `PutLogs`/`PostMetricData` propagation note above.
 

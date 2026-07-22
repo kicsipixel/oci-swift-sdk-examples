@@ -514,6 +514,19 @@ actor OCIStore {
           "elapsedMs": .stringConvertible((ContinuousClock.now - start).wholeMilliseconds),
         ]
       )
+      // Payload volume, counted where the byte count is actually known — the
+      // middleware upstack only sees a `Response`, whose body is a stream it must
+      // not consume. Dimensioned by bucket alone: the object *name* is the caller's
+      // to choose, so labelling by it would mint one metric stream per distinct
+      // URL ever requested. Bucket is a single configured value per deployment.
+      //
+      // "Cumulative" is the query's job, not the counter's: the backend exports a
+      // counter as the per-step delta, so the running total is
+      // `bytes_served_total[1m].sum()` summed over whatever window you ask for.
+      // That is what you want across restarts — a monotonic in-process total would
+      // reset to zero every rollout and read as a cliff.
+      Counter(label: "bytes_served_total", dimensions: [("bucket", bucket)])
+        .increment(by: data.count)
       return data
     }
     catch {
