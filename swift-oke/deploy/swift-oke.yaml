@@ -1,13 +1,17 @@
-# swift-oke — OKE Workload Identity demo.
+# swift-oke — OKE Workload Identity demo, with OCI Logging + OCI Monitoring.
 #
 # Prerequisites (one-time; see README for the OCI-side commands):
 #   1. An ENHANCED OKE cluster (workload identity requires an enhanced cluster).
 #   2. A condition-based `any-user` IAM policy authorizing this pod's workload
 #      identity (namespace 'default', service account 'swift-oke', cluster OCID)
 #      to read the bucket. OKE Workload Identity does NOT use dynamic groups.
+#   3. For the telemetry env vars below, two more statements in that same policy,
+#      in the same condition form: `use log-content` (PutLogs) and `use metrics`
+#      (PostMetricData). Policy changes take up to ~15 minutes to take effect.
 #
 # No CA/trust-store step is needed: the signer pins the cluster CA in-process.
-# Replace every <PLACEHOLDER> before applying.
+# The values below are the demo deployment's — swap in your own region, bucket,
+# log OCID and compartment before applying.
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -36,18 +40,25 @@ spec:
       # Projects the SA token (/var/run/secrets/.../token) and the cluster CA
       # (/var/run/secrets/.../ca.crt) into the pod. Required for workload identity.
       automountServiceAccountToken: true
+      # The app flushes its log and metric buffers on SIGTERM, after the HTTP
+      # server has stopped. Budget for it: the log batcher's final PutLogs is
+      # bounded by maxAttempts x requestTimeout + maxCumulativeDelay
+      # (3 x 5s + 10s = 25s with the settings in main.swift), and the metrics
+      # factory does one final PostMetricData after that. 45s leaves headroom;
+      # the Kubernetes default of 30s would SIGKILL a slow final flush.
+      terminationGracePeriodSeconds: 45
       containers:
         - name: swift-oke
           # Ready-to-run published image (linux/arm64 — matches OKE virtual nodes'
           # Arm pods). Swap for your own build on any registry the cluster can pull
           # from; see the README "Build & push the image" section.
-          image: docker.io/iliasaz/swift-oke:latest
+          image: docker.io/iliasaz/swift-oke:observability
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
             - name: OCI_REGION
-              value: "<region>" # e.g. us-phoenix-1
+              value: "us-phoenix-1"
             - name: OCI_BUCKET
               value: "bucket-relay-bucket"
             - name: OCI_OBJECT
@@ -55,7 +66,32 @@ spec:
             # Optional: set the Object Storage namespace to skip the getNamespace()
             # call (and the extra permission it needs). Find it with `oci os ns get`.
             - name: OCI_NAMESPACE
-              value: "<tenancy-object-storage-namespace>"
+              value: "axflgd2bg3dp"
+            # swift-log level for both the console and the OCI handler.
+            - name: LOG_LEVEL
+              value: "info"
+
+            # --- Observability -------------------------------------------------
+            # Both backends are opt-in and fail-soft: delete a variable (or leave
+            # it empty) and that half simply stays off — stdout-only logging, no-op
+            # metrics — while the service keeps serving. A misconfigured value
+            # never breaks /health either; it is reported at startup and in
+            # GET /telemetry.
+
+            # OCID of a custom log in OCI Logging (Console: Logging > Log groups >
+            # your log > OCID). Nothing validates it — a wrong OCID fails silently
+            # at flush time and only shows up in GET /telemetry's counters.
+            - name: OCI_LOG_ID
+              value: "ocid1.log.oc1.phx.amaaaaaay5bpslqa6gjkojxy5xxd4flmmaljtc3auycpeipml6izxobvwbfq"
+            # Metric namespace. Lowercase [a-z][a-z0-9_]* only, and it must not
+            # start with "oci_"/"oracle_" — the SDK rejects those at startup.
+            # "swift-oke" would be rejected too (hyphens are not allowed).
+            - name: OCI_METRICS_NAMESPACE
+              value: "swift_oke"
+            # Compartment the metric data is posted into. Required together with
+            # OCI_METRICS_NAMESPACE; either one alone leaves metrics off.
+            - name: OCI_COMPARTMENT_ID
+              value: "ocid1.compartment.oc1..aaaaaaaa566spsor342g5igy6fumu4rfdmwi3ubjfwy5wjswegrriahsyk2q"
           readinessProbe:
             httpGet:
               path: /health
