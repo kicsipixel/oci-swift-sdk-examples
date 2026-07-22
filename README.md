@@ -52,6 +52,20 @@ Key features:
 
 [View swift-oke →](./swift-oke)
 
+### apm-tracing
+
+**apm-tracing** is a server-side example: a standalone SwiftPM package that exports OpenTelemetry spans to **OCI Application Performance Monitoring (APM)** with [swift-otel](https://github.com/swift-otel/swift-otel)'s OTLP/HTTP exporter. APM ingests OpenTelemetry natively and authenticates with a **data key**, so there is no signer, no IAM policy and no request signing on the tracing path. It comes in two flavours — a long-running workload and an OCI Function — sharing one small `APMTracing` library.
+
+Key features:
+- Ships spans to an APM domain over OTLP/HTTP, authenticated with an APM data key (keyless as far as IAM is concerned)
+- `apm-trace-probe` — any long-running Swift workload (Compute VM, OKE, Container Instances); endpoint and key come from the environment
+- `apm-trace-function` — an OCI Function; reads the platform's injected tracing configuration through `OCIKitFunctions`' `TracingContext` and parents each invocation's span on the injected `X-B3-*` headers
+- Includes a Dockerfile for the function image, and documents what a real run against a live domain actually returned
+
+Needs a live **APM domain** and one of its data keys; nothing here runs without one.
+
+[View apm-tracing →](./apm-tracing)
+
 ---
 
 ## 🚀 Getting Started
