@@ -211,12 +211,12 @@ Allow 1-2 minutes after traffic for both services to index before querying — s
 
 > **Skip this section if you just want to run the example** — ready-made linux/arm64 images (matching OKE virtual nodes' Arm pods) are published at [`docker.io/iliasaz/swift-oke`](https://hub.docker.com/r/iliasaz/swift-oke): `:observability` is this version, with the OCI Logging + Monitoring wiring, and is what `deploy/swift-oke.yaml` pins; `:latest` is the plain workload-identity demo without it. Build your own if you're on amd64 nodes or changing the code — and remember to point the manifest's `image:` at your build, or you will be running the published one.
 
-The `Dockerfile` builds from the SDK as a **remote** dependency, so the container build can fetch it. The checked-in `Package.swift` already points at a pushed branch — the one carrying the workload-identity product and the observability backends — and must keep pointing at *some* remote ref, because the sibling SDK checkout is not in the image build context:
+The `Dockerfile` builds from the SDK as a **remote** dependency, so the container build can fetch it. The checked-in `Package.swift` tracks `main`, and must keep pointing at *some* remote ref, because the sibling SDK checkout is not in the image build context:
 
 ```swift
 // Package.swift
-.package(url: "https://github.com/iliasaz/oci-swift-sdk.git", branch: "feature/observability-85"),
-// → switch to branch: "main", or a tagged release, once that branch merges.
+.package(url: "https://github.com/iliasaz/oci-swift-sdk.git", branch: "main"),
+// → pin to a tagged release instead if you want reproducible image builds.
 ```
 
 Then build for your node-pool architecture and push to OCIR:
@@ -563,6 +563,6 @@ oci lb backend-set-health get --load-balancer-id <lb-ocid> \
 
 ## Notes
 
-- ⚠️ **SDK dependency:** the checked-in `Package.swift` tracks an unmerged SDK branch (`feature/observability-85`, [oci-swift-sdk PR #94](https://github.com/iliasaz/oci-swift-sdk/pull/94)). Switch it to `branch: "main"` — or a tagged release — once that PR merges. Keep it a **remote** reference: a local `.package(path: "../../oci-swift-sdk")` is fine for development but breaks `docker build`, since the sibling checkout is not in the image build context.
+- ⚠️ **SDK dependency:** the checked-in `Package.swift` tracks `branch: "main"` of [oci-swift-sdk](https://github.com/iliasaz/oci-swift-sdk) — the observability backends landed there in [PR #94](https://github.com/iliasaz/oci-swift-sdk/pull/94). Tracking a branch means image builds are not reproducible; pin a tagged release if that matters to you. Keep it a **remote** reference either way: a local `.package(path: "../../oci-swift-sdk")` is fine for development but breaks `docker build`, since the sibling checkout is not in the image build context.
 - The workload-identity transport lives in the **opt-in** `OCIKitWorkloadIdentity` product. Consumers who don't use OKE never pull the swift-nio dependency graph.
 - Region is read from `OCI_REGION`, falling back to the resource-principal region (`OCI_RESOURCE_PRINCIPAL_REGION`) if the deployment sets it; the namespace is auto-detected via `getNamespace()`.

@@ -6,11 +6,10 @@ let package = Package(
   platforms: [.macOS(.v15)],
   dependencies: [
     .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.25.0"),
-    // Tracks the SDK branch that adds the `OCIKitWorkloadIdentity` product and the
-    // OCI swift-log / swift-metrics backends until it merges; switch to
-    // `branch: "main"` (or a tagged release) afterwards. For local development
-    // against a sibling checkout use `.package(path: "../../oci-swift-sdk")`.
-    .package(url: "https://github.com/iliasaz/oci-swift-sdk.git", branch: "feature/observability-85"),
+    // Must stay a *remote* reference: the sibling checkout is not in the Docker
+    // build context, so a local `.package(path: "../../oci-swift-sdk")` — fine for
+    // day-to-day development — breaks `docker build`.
+    .package(url: "https://github.com/iliasaz/oci-swift-sdk.git", branch: "main"),
     // All three are already in the graph via Hummingbird and OCIKit. They are
     // declared explicitly because this target imports them by name: swift-log to
     // bootstrap the logging system, swift-metrics to record instruments, and
