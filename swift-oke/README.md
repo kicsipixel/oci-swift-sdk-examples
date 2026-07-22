@@ -66,6 +66,16 @@ All environment variables are optional; an empty value counts as unset.
 | `OCI_LOG_ID`            | *(unset — logs stay local)*   | OCID of a custom log in OCI Logging. Set it to ship logs via `PutLogs`.                         |
 | `OCI_METRICS_NAMESPACE` | *(unset — metrics no-op)*     | Metric namespace, e.g. `swift_oke`. Must match `[a-z][a-z0-9_]*[a-z0-9]`, no `oci_`/`oracle_`.  |
 | `OCI_COMPARTMENT_ID`    | *(unset — metrics no-op)*     | Compartment the metric data is posted into. Required **together with** `OCI_METRICS_NAMESPACE`. |
+| `POD_NAME`              | `HOSTNAME`, then the OS hostname | Identifies the emitter: the log `source` field and the `pod` metric dimension. The manifest injects it from the downward API — see the gotcha below. |
+
+> ⚠️ **Don't trust `HOSTNAME` for the pod name on virtual nodes.** The reflex is to read `HOSTNAME` (or `ProcessInfo.processInfo.hostName`) and call it the pod name. On this cluster's virtual nodes both return **`localhost`** — verified by reading the `source` field back out of OCI Logging. Nothing errors: every replica just reports the same name, and the label you added specifically to tell replicas apart quietly becomes a constant. The manifest therefore injects the real name through the downward API, which is authoritative on every node type:
+>
+> ```yaml
+> - name: POD_NAME
+>   valueFrom:
+>     fieldRef:
+>       fieldPath: metadata.name
+> ```
 
 ## Observability (optional)
 

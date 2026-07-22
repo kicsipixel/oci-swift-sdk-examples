@@ -82,6 +82,17 @@ spec:
             # never breaks /health either; it is reported at startup and in
             # GET /telemetry.
 
+            # The pod's own name, stamped on every log entry (`source`) and every
+            # metric stream (the `pod` dimension). This downward-API block is not
+            # optional decoration: on VIRTUAL NODES the container's HOSTNAME is
+            # `localhost` (verified), so without POD_NAME every replica reports the
+            # same name and the dimension you would use to tell them apart silently
+            # becomes a constant.
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+
             # OCID of a custom log in OCI Logging (Console: Logging > Log groups >
             # your log > OCID) — "ocid1.log.oc1.<region-key>.<...>". Nothing
             # validates it: a wrong OCID fails silently at flush time and only

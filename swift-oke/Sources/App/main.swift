@@ -85,9 +85,18 @@ func backendState(live: Bool, configured: Bool) -> String {
 let logId = setting("OCI_LOG_ID")
 let metricsNamespace = setting("OCI_METRICS_NAMESPACE")
 let compartmentId = setting("OCI_COMPARTMENT_ID")
-/// Kubernetes sets HOSTNAME to the pod name — the most useful "who emitted this"
-/// label there is, and stable for the pod's lifetime.
-let podName = environment["HOSTNAME"] ?? ProcessInfo.processInfo.hostName
+/// Who emitted this — stamped on every log entry (`source`) and every metric
+/// stream (the `pod` dimension), and stable for the pod's lifetime.
+///
+/// `POD_NAME` comes from the downward API (`fieldRef: metadata.name`) that
+/// `deploy/swift-oke.yaml` injects, and it is the only reliable source here.
+/// The usual shortcut — trusting `HOSTNAME` — is a trap on **virtual nodes**:
+/// verified on this cluster, the pod's `HOSTNAME` is `localhost`, not
+/// `swift-oke-<replicaset>-<suffix>`, so every replica reports the same name and
+/// the label you were counting on to tell them apart quietly stops meaning
+/// anything. `ProcessInfo.processInfo.hostName` degrades the same way.
+let podName =
+  environment["POD_NAME"] ?? environment["HOSTNAME"] ?? ProcessInfo.processInfo.hostName
 
 // MARK: - Telemetry
 
