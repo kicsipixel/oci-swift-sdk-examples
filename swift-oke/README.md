@@ -1,11 +1,12 @@
 # swift-oke
 
-A small [Hummingbird](https://github.com/hummingbird-project/hummingbird) REST service that reads a file from **OCI Object Storage** and returns its text — authenticating with **OKE Workload Identity**. It runs as a pod in an Oracle Container Engine for Kubernetes (OKE) cluster and uses **no API key and no config file**: the pod's Kubernetes service account *is* the identity, authorized by a condition-based OCI IAM policy.
+A small [Hummingbird](https://github.com/hummingbird-project/hummingbird) REST service that reads a file from **OCI Object Storage** and returns its text — authenticating with **OKE Workload Identity**. It runs as a pod in an Oracle Container Engine for Kubernetes (OKE) cluster and uses **no API key and no config file**: the pod's Kubernetes service account *is* the identity, authorized by a condition-based OCI IAM policy. With two optional environment variables it also ships **its own logs and metrics** back to OCI, signed with that same identity.
 
 ## What it demonstrates
 
 - **OKE Workload Identity** end-to-end with [`OCIKit`](https://github.com/iliasaz/oci-swift-sdk): `OKEWorkloadIdentitySigner.fromWorkloadIdentity()` exchanges the pod's projected service-account token for a resource principal session token (RPST) at the in-cluster *proxymux* endpoint, then signs Object Storage requests with it.
 - **In-process custom-CA TLS**. The proxymux TLS certificate is signed by the in-cluster Kubernetes CA (not a public CA). The opt-in `OCIKitWorkloadIdentity` product pins that CA **in-process** via AsyncHTTPClient + NIOSSL (BoringSSL) — so there is **no `update-ca-certificates` step, no cluster CA install, nothing extra in the image**. It just reads the CA that Kubernetes already projects into every pod.
+- **One RPST, three services.** The same signer backs OCIKit's two observability backends: `OCILogHandler` (a swift-log backend over `PutLogs` → **OCI Logging**) and `OCIMetricsFactory` (a swift-metrics backend over `PostMetricData` → **OCI Monitoring**). Application code writes plain `Logger` and `Counter`/`Timer` calls; only the bootstrap in `main.swift` knows about OCI. Both halves are **opt-in and fail-soft** — with their variables unset the service logs to stdout and records no metrics, and a telemetry failure never breaks `/health`.
 
 ## Architecture
 
@@ -42,14 +43,53 @@ let data = try await client.getObject(
 
 ## REST API
 
-| Method | Path            | Description                                        |
-| ------ | --------------- | -------------------------------------------------- |
-| GET    | `/health`       | Liveness (no OCI call).                            |
-| GET    | `/`             | Service info.                                      |
-| GET    | `/file`         | Read `OCI_OBJECT` (default `swift-oke-test.txt`).  |
-| GET    | `/files/{name}` | Read any object in the bucket, returned as text.   |
+| Method | Path            | Description                                                       |
+| ------ | --------------- | ----------------------------------------------------------------- |
+| GET    | `/health`       | Liveness (no OCI call).                                           |
+| GET    | `/`             | Service info.                                                     |
+| GET    | `/file`         | Read `OCI_OBJECT` (default `swift-oke-test.txt`).                 |
+| GET    | `/files/{name}` | Read any object in the bucket, returned as text.                  |
+| GET    | `/telemetry`    | Log/metric delivery counters — see *Observability* below.         |
 
-Configuration (env, all optional): `OCI_BUCKET` (default `bucket-relay-bucket`), `OCI_OBJECT` (default `swift-oke-test.txt`), `OCI_REGION` (falls back to `OCI_RESOURCE_PRINCIPAL_REGION`), `OCI_NAMESPACE` (auto-detected if unset), `PORT` (default `8080`).
+## Configuration
+
+All environment variables are optional; an empty value counts as unset.
+
+| Variable                | Default                       | Purpose                                                                                        |
+| ----------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| `OCI_BUCKET`            | `bucket-relay-bucket`         | Bucket to read from.                                                                            |
+| `OCI_OBJECT`            | `swift-oke-test.txt`          | Object `/file` returns.                                                                         |
+| `OCI_REGION`            | `OCI_RESOURCE_PRINCIPAL_REGION` | Region id, e.g. `us-phoenix-1`.                                                               |
+| `OCI_NAMESPACE`         | auto-detected                 | Object Storage namespace; setting it skips the `getNamespace()` call.                           |
+| `PORT`                  | `8080`                        | Listen port.                                                                                    |
+| `LOG_LEVEL`             | `info`                        | swift-log level, for both the console handler and the OCI one.                                  |
+| `OCI_LOG_ID`            | *(unset — logs stay local)*   | OCID of a custom log in OCI Logging. Set it to ship logs via `PutLogs`.                         |
+| `OCI_METRICS_NAMESPACE` | *(unset — metrics no-op)*     | Metric namespace, e.g. `swift_oke`. Must match `[a-z][a-z0-9_]*[a-z0-9]`, no `oci_`/`oracle_`.  |
+| `OCI_COMPARTMENT_ID`    | *(unset — metrics no-op)*     | Compartment the metric data is posted into. Required **together with** `OCI_METRICS_NAMESPACE`. |
+
+## Observability (optional)
+
+Set `OCI_LOG_ID` and/or the `OCI_METRICS_NAMESPACE` + `OCI_COMPARTMENT_ID` pair and the pod ships its own telemetry to OCI over the workload identity it already holds — no second credential:
+
+- **Logs.** `LoggingSystem.bootstrap` installs a `MultiplexLogHandler` of the console handler (so `kubectl logs` keeps showing everything) and `OCILogHandler`, which batches records and flushes every 5s.
+- **Metrics.** `MetricsSystem.bootstrap(OCIMetricsFactory(...))`, plus a small middleware recording `http_requests_total` (counter) and `http_request_duration` (timer) per request, dimensioned by route *template*, an allow-listed HTTP method, and status *class* — deliberately bounded, since each distinct combination mints its own metric stream. The factory stamps `app` and `pod` onto every stream.
+- **Shutdown.** A `ServiceLifecycle` service drains both buffers on SIGTERM, after the HTTP server has stopped. `deploy/swift-oke.yaml` raises `terminationGracePeriodSeconds` to 45 to cover it.
+
+Neither backend ever reports a delivery failure by throwing — a wrong log OCID or a missing policy statement looks exactly like a healthy pod. `GET /telemetry` is how you find out:
+
+```
+$ curl https://$HOST/telemetry
+logging: enabled
+metrics: enabled (namespace=swift_oke)
+log.enqueued = 128
+log.submitted = 128
+log.flushFailures = 0
+log.lastFlushError = none
+metrics.postedStreams = 6
+...
+```
+
+`logging: failed` (as opposed to `disabled`) means the startup bootstrap did not complete. It is a **one-shot** and is never retried — restart the pod, and read `kubectl logs` for the reason. The endpoint reports only the *case name* of a flush error, since it is served unauthenticated on the same public listener; the full text (which includes the service's raw response body) stays in `kubectl logs`. Put it behind auth or a separate listener before exposing anything richer.
 
 ## Prerequisites (OCI side, one-time)
 
@@ -72,15 +112,28 @@ Configuration (env, all optional): `OCI_BUCKET` (default `bucket-relay-bucket`),
 
 > The condition attributes (`namespace`, `service_account`, `cluster_id`) must match the pod: namespace `default`, service account `swift-oke`, and your cluster's OCID.
 
+4. **Only if you want telemetry** (`OCI_LOG_ID` / `OCI_METRICS_NAMESPACE`): a **custom log** in OCI Logging (Console: *Logging → Log groups → Create log*; note its OCID), and **two more statements** in the same policy, in the same condition form — `use log-content` for `PutLogs` and `use metrics` for `PostMetricData`. `oci iam policy update` **replaces** the statement list rather than appending to it, so pass the existing statements too:
+
+   ```bash
+   oci iam policy update --policy-id <POLICY_OCID> --version-date "" --force --statements '[
+     "<... the two Object Storage statements from step 3 ...>",
+     "Allow any-user to use log-content in compartment id <COMPARTMENT_OCID> where all {request.principal.type = '\''workload'\'', request.principal.namespace = '\''default'\'', request.principal.service_account = '\''swift-oke'\'', request.principal.cluster_id = '\''<CLUSTER_OCID>'\''}",
+     "Allow any-user to use metrics in compartment id <COMPARTMENT_OCID> where all {request.principal.type = '\''workload'\'', request.principal.namespace = '\''default'\'', request.principal.service_account = '\''swift-oke'\'', request.principal.cluster_id = '\''<CLUSTER_OCID>'\''}"
+   ]'
+   ```
+
+   > ⚠️ **IAM policy changes take up to ~15 minutes to take effect.** Until they do, `PutLogs` and `PostMetricData` are rejected — and the log path swallows that failure by design (reporting it through swift-log would recurse). Check `GET /telemetry` for `log.flushFailures` / `log.lastFlushError` before concluding anything is wrong with the code.
+
 ## Build & push the image
 
-> **Skip this section if you just want to run the example** — a ready-made image is published at [`docker.io/iliasaz/swift-oke:latest`](https://hub.docker.com/r/iliasaz/swift-oke) (linux/arm64, which matches OKE virtual nodes' Arm pods), and the deployment manifest already uses it. Build your own if you're on amd64 nodes or changing the code.
+> **Skip this section if you just want to run the example** — ready-made linux/arm64 images (matching OKE virtual nodes' Arm pods) are published at [`docker.io/iliasaz/swift-oke`](https://hub.docker.com/r/iliasaz/swift-oke): `:observability` is this version, with the OCI Logging + Monitoring wiring, and is what `deploy/swift-oke.yaml` pins; `:latest` is the plain workload-identity demo without it. Build your own if you're on amd64 nodes or changing the code — and remember to point the manifest's `image:` at your build, or you will be running the published one.
 
-The `Dockerfile` builds from the SDK as a **remote** dependency, so the container build can fetch it. Before building, point `Package.swift` at the pushed SDK (the checked-in default is a local path for development):
+The `Dockerfile` builds from the SDK as a **remote** dependency, so the container build can fetch it. The checked-in `Package.swift` already points at a pushed branch — the one carrying the workload-identity product and the observability backends — and must keep pointing at *some* remote ref, because the sibling SDK checkout is not in the image build context:
 
 ```swift
 // Package.swift
-.package(url: "https://github.com/iliasaz/oci-swift-sdk.git", branch: "main"),
+.package(url: "https://github.com/iliasaz/oci-swift-sdk.git", branch: "feature/observability-85"),
+// → switch to branch: "main", or a tagged release, once that branch merges.
 ```
 
 Then build for your node-pool architecture and push to OCIR:
@@ -95,7 +148,18 @@ docker push "$REGISTRY/swift-oke:latest"
 
 ## Deploy
 
-Edit `deploy/swift-oke.yaml` — set `OCI_REGION`, (if your bucket differs) `OCI_BUCKET`/`OCI_OBJECT`, and the `image` if you built your own (the default is the published [`iliasaz/swift-oke`](https://hub.docker.com/r/iliasaz/swift-oke) arm64 image).
+Edit `deploy/swift-oke.yaml` and replace every `<PLACEHOLDER>`:
+
+| Field                   | Set it to                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `image`                 | Your own build, if you made one. The checked-in default is `docker.io/iliasaz/swift-oke:observability`. |
+| `OCI_REGION`            | Your region id, e.g. `us-phoenix-1`.                                                             |
+| `OCI_NAMESPACE`         | Your Object Storage namespace (`oci os ns get`), or delete the variable to auto-detect it.        |
+| `OCI_BUCKET` / `OCI_OBJECT` | Only if your bucket or object differ from the demo defaults.                                  |
+| `OCI_LOG_ID`            | Your custom log's OCID — **or leave it empty** to run without OCI Logging.                        |
+| `OCI_COMPARTMENT_ID`    | The compartment to post metrics into — **or leave it empty** to run without OCI Monitoring.       |
+
+The two telemetry OCIDs ship empty rather than as `<placeholders>` on purpose: empty means "that backend is off", which is a working deployment, whereas a leftover placeholder would build a client against an OCID you do not own and then fail *silently* at flush time.
 
 The bundled Service is a **public OCI Load Balancer** tuned for a virtual-nodes cluster — this is **Option B** in the next section, and it needs the LB subnet security rules (and a TLS secret) before it serves cleanly. If you plan to use **Option A** (a real Let's Encrypt cert via ingress-nginx, recommended), or just want an internal-only test, swap this Service for the minimal `ClusterIP` variant shown in the manifest and reach the app in-cluster instead. Either way, read *Expose it publicly* next before wiring up TLS.
 
@@ -400,6 +464,7 @@ oci lb backend-set-health get --load-balancer-id <lb-ocid> \
 | `409 ... Token collision` on rapid Service create/delete | The OCI cloud-controller is mid-reconcile | Let the reconcile settle (~30-60s), then re-apply |
 | (Option B) Updated the TLS secret but the LB serves the old certificate | OCI LB certificates are immutable by name; the CCM names them after the secret | Create a secret under a **new** name and update the `oci-load-balancer-tls-secret` annotation |
 | (Option A) Certificate stays `READY=False` / challenge stuck `Pending` | HTTP-01 can't reach nginx, or a DNS/rate-limit issue | `kubectl get certificate,order,challenge -A` and `kubectl describe` the challenge; confirm `http://<host>/` reaches nginx through the LB (backend health OK, `lb-security-rules.sh` applied); on shared **sslip.io** hosts you can hit Let's Encrypt rate limits — use the staging issuer while testing |
+| Pod is healthy but nothing appears in OCI Logging / Monitoring | Missing `use log-content` / `use metrics` policy statements (or a policy that has not propagated yet — allow ~15 min), or a wrong `OCI_LOG_ID`. The log backend never reports its own failures through swift-log, so this is silent by design | `curl https://<host>/telemetry`: `logging: disabled` means the variable is unset, `failed` means the one-shot startup bootstrap did not complete (restart the pod), and a non-zero `log.flushFailures` with a `log.lastFlushError` means delivery is being rejected — `kubectl logs` has the full error text |
 | `kubectl port-forward` / `kubectl exec` return `501 not implemented` | Not supported on virtual nodes | Test via the LB, or run a one-shot curl `Pod`/`Job` hitting the ClusterIP `http://swift-oke.default.svc.cluster.local` and read `kubectl logs` (`logs` works on virtual nodes; `port-forward`/`exec` do not) |
 
 ### References
@@ -415,6 +480,6 @@ oci lb backend-set-health get --load-balancer-id <lb-ocid> \
 
 ## Notes
 
-- ⚠️ **SDK dependency:** the checked-in `Package.swift` uses a local `path:` reference for developing against an unmerged SDK branch. Switch it to the remote `branch: "main"` (or a tagged release) before `docker build` — the sibling SDK checkout is not in the image build context.
+- ⚠️ **SDK dependency:** the checked-in `Package.swift` tracks an unmerged SDK branch (`feature/observability-85`). Switch it to `branch: "main"` — or a tagged release — once that merges. Keep it a **remote** reference: a local `.package(path: "../../oci-swift-sdk")` is fine for development but breaks `docker build`, since the sibling checkout is not in the image build context.
 - The workload-identity transport lives in the **opt-in** `OCIKitWorkloadIdentity` product. Consumers who don't use OKE never pull the swift-nio dependency graph.
 - Region is read from `OCI_REGION`, falling back to the resource-principal region (`OCI_RESOURCE_PRINCIPAL_REGION`) if the deployment sets it; the namespace is auto-detected via `getNamespace()`.
