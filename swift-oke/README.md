@@ -91,6 +91,63 @@ metrics.postedStreams = 6
 
 `logging: failed` (as opposed to `disabled`) means the startup bootstrap did not complete. It is a **one-shot** and is never retried — restart the pod, and read `kubectl logs` for the reason. The endpoint reports only the *case name* of a flush error, since it is served unauthenticated on the same public listener; the full text (which includes the service's raw response body) stays in `kubectl logs`. Put it behind auth or a separate listener before exposing anything richer.
 
+### Verifying delivery independently
+
+`GET /telemetry` proves the app *thinks* it delivered — it's the app's own counters. To confirm OCI actually received the data, query the two services directly with the OCI CLI. Below is real output (OCIDs and tenancy-specific identifiers redacted) from a run against a live OKE pod, curled with a unique marker string so the entries are unambiguous:
+
+**Logs** — `oci logging-search search-logs`, targeting `<compartment_ocid>/<loggroup_ocid>/<log_ocid>`:
+
+```bash
+oci logging-search search-logs --profile <profile> --search-query \
+  "search \"<compartment_ocid>/<loggroup_ocid>/<log_ocid>\" | sort by datetime desc" \
+  --time-start 2026-07-22T03:44:00.000Z --time-end 2026-07-22T03:47:30.000Z --limit 50
+```
+
+Real result: **103 entries** in the window, all carrying `oracle.{compartmentid,loggroupid,logid,tenantid}` matching the target log exactly (no cross-contamination). 42 of the 103 contained the curled marker string, and that count decomposed exactly against the traffic driven (10 marked root-path hits × 1 line each, plus 8 marked 404s × 4 lines each — request, `ObjectStorageClient` `ObjectNotFound`, `swift-oke.store` "object read failed", `swift-oke` "request failed"). One full entry, verbatim, showing the structured fields survive the round trip:
+
+```json
+{
+  "data": {
+    "datetime": 1784691950321,
+    "logContent": {
+      "data": {
+        "message": "2026-07-22T03:45:50.321Z error swift-oke : error=unexpectedStatusCode(404, \"The object 'does-not-exist-obs-probe-<marker>-8.txt' was not found in the bucket 'bucket-relay-bucket'\") hb.request.id=6641d0b5061e3fea59c775f3437876e1 object=does-not-exist-obs-probe-<marker>-8.txt [App] request failed"
+      },
+      "id": "740A3932-4522-471C-AE0F-C152735DA4EA",
+      "oracle": {
+        "compartmentid": "<compartment_ocid>",
+        "ingestedtime": "2026-07-22T03:45:52.992651747Z",
+        "loggroupid": "<loggroup_ocid>",
+        "logid": "<log_ocid>",
+        "tenantid": "<tenancy_ocid>"
+      },
+      "source": "localhost",
+      "specversion": "1.0",
+      "subject": "swift-oke",
+      "time": "2026-07-22T03:45:50.321Z",
+      "type": "com.oracle.oci-swift-sdk.swift-oke"
+    }
+  }
+}
+```
+
+Three distinct swift-log logger labels reached OCI Logging (`swift-oke`, `swift-oke.store`, `ObjectStorageClient`), and both `info`/`error` levels appear — nothing is collapsed or dropped between the handler and `PutLogs`. Ingestion lag (`oracle.ingestedtime` − `logContent.time`) ran 0.76s–4.25s, ordinary pipeline latency.
+
+**Metrics** — `oci monitoring metric list` to see the streams that exist, then `summarize-metrics-data` to pull datapoints:
+
+```bash
+oci monitoring metric list --profile <profile> --compartment-id <compartment_ocid> --namespace swift_oke --all
+
+oci monitoring metric-data summarize-metrics-data --profile <profile> \
+  --compartment-id <compartment_ocid> --namespace swift_oke \
+  --query-text 'http_requests_total[1m].sum()' \
+  --start-time 2026-07-22T03:40:00Z --end-time 2026-07-22T03:52:19Z
+```
+
+Real result: exactly **10 streams** — `{http_requests_total, http_request_duration}` × 5 routes (`/`, `/file`, `/files/{name}`, `/health`, `/telemetry`), each dimensioned `{app, method, pod, route, status_class}` — confirming the route-template cardinality guard works (`/files/{name}` stayed one stream, never one per filename curled). `http_requests_total[1m].sum()` in the probe's 1-minute bucket: `route=/` → 10, `route=/file` → 10, `route=/files/{name}` (`status_class=4xx`) → 8, `route=/telemetry` → 1 — an exact match for the traffic driven. `http_request_duration[1m].sum()` (unit `ns`, from the response's `metadata.unit`) in the same bucket: `/file` ≈ 30.1ms avg over 10 requests, `/files/{name}` 4xx ≈ 13.0ms avg over 8, `/` ≈ 22.4µs avg, `/telemetry` ≈ 42.5µs for its one request — both a counter and a timer present for every recorded route, values non-zero and magnitude-plausible for what each route does.
+
+Allow 1-2 minutes after traffic for both services to index before querying — see the `PutLogs`/`PostMetricData` propagation note above.
+
 ## Prerequisites (OCI side, one-time)
 
 1. **Enhanced OKE cluster.** Workload identity requires an enhanced cluster (a non-enhanced cluster returns HTTP 403 "please ensure the cluster type is enhanced").
@@ -480,6 +537,6 @@ oci lb backend-set-health get --load-balancer-id <lb-ocid> \
 
 ## Notes
 
-- ⚠️ **SDK dependency:** the checked-in `Package.swift` tracks an unmerged SDK branch (`feature/observability-85`). Switch it to `branch: "main"` — or a tagged release — once that merges. Keep it a **remote** reference: a local `.package(path: "../../oci-swift-sdk")` is fine for development but breaks `docker build`, since the sibling checkout is not in the image build context.
+- ⚠️ **SDK dependency:** the checked-in `Package.swift` tracks an unmerged SDK branch (`feature/observability-85`, [oci-swift-sdk PR #94](https://github.com/iliasaz/oci-swift-sdk/pull/94)). Switch it to `branch: "main"` — or a tagged release — once that PR merges. Keep it a **remote** reference: a local `.package(path: "../../oci-swift-sdk")` is fine for development but breaks `docker build`, since the sibling checkout is not in the image build context.
 - The workload-identity transport lives in the **opt-in** `OCIKitWorkloadIdentity` product. Consumers who don't use OKE never pull the swift-nio dependency graph.
 - Region is read from `OCI_REGION`, falling back to the resource-principal region (`OCI_RESOURCE_PRINCIPAL_REGION`) if the deployment sets it; the namespace is auto-detected via `getNamespace()`.
