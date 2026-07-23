@@ -1,13 +1,19 @@
-# swift-oke — OKE Workload Identity demo.
+# swift-oke — OKE Workload Identity demo, with OCI Logging + OCI Monitoring.
 #
 # Prerequisites (one-time; see README for the OCI-side commands):
 #   1. An ENHANCED OKE cluster (workload identity requires an enhanced cluster).
 #   2. A condition-based `any-user` IAM policy authorizing this pod's workload
 #      identity (namespace 'default', service account 'swift-oke', cluster OCID)
 #      to read the bucket. OKE Workload Identity does NOT use dynamic groups.
+#   3. For the telemetry env vars below, two more statements in that same policy,
+#      in the same condition form: `use log-content` (PutLogs) and `use metrics`
+#      (PostMetricData). Policy changes take up to ~15 minutes to take effect.
 #
 # No CA/trust-store step is needed: the signer pins the cluster CA in-process.
-# Replace every <PLACEHOLDER> before applying.
+# Replace every <PLACEHOLDER> before applying. The two telemetry OCIDs
+# (OCI_LOG_ID, OCI_COMPARTMENT_ID) ship **empty** on purpose: empty means "that
+# backend is off", which is a working deployment, whereas a leftover placeholder
+# string would build a batcher against an OCID you do not own and fail silently.
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -36,12 +42,21 @@ spec:
       # Projects the SA token (/var/run/secrets/.../token) and the cluster CA
       # (/var/run/secrets/.../ca.crt) into the pod. Required for workload identity.
       automountServiceAccountToken: true
+      # The app flushes its log and metric buffers on SIGTERM, after the HTTP
+      # server has stopped. Budget for it, in the order main.swift actually
+      # drains them: the log batcher's final PutLogs first, bounded by
+      # maxAttempts x requestTimeout + maxCumulativeDelay (3 x 5s + 10s = 25s
+      # with the settings in main.swift); then the metrics factory, which awaits
+      # the in-flight step tick and posts once more, each PostMetricData bounded
+      # to 5s by the transport main.swift injects (~10s). 45s leaves headroom;
+      # the Kubernetes default of 30s would SIGKILL a slow final flush.
+      terminationGracePeriodSeconds: 45
       containers:
         - name: swift-oke
           # Ready-to-run published image (linux/arm64 — matches OKE virtual nodes'
           # Arm pods). Swap for your own build on any registry the cluster can pull
           # from; see the README "Build & push the image" section.
-          image: docker.io/iliasaz/swift-oke:latest
+          image: docker.io/iliasaz/swift-oke:observability
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -56,6 +71,56 @@ spec:
             # call (and the extra permission it needs). Find it with `oci os ns get`.
             - name: OCI_NAMESPACE
               value: "<tenancy-object-storage-namespace>"
+            # swift-log level for both the console and the OCI handler.
+            - name: LOG_LEVEL
+              value: "info"
+
+            # --- Observability -------------------------------------------------
+            # Both backends are opt-in and fail-soft: delete a variable (or leave
+            # it empty) and that half simply stays off — stdout-only logging, no-op
+            # metrics — while the service keeps serving. A misconfigured value
+            # never breaks /health either; it is reported at startup and in
+            # GET /telemetry.
+
+            # The pod's own name, stamped on every log entry (`source`) and every
+            # metric stream (the `pod` dimension). This downward-API block is not
+            # optional decoration: on VIRTUAL NODES the container's HOSTNAME is
+            # `localhost` (verified), so without POD_NAME every replica reports the
+            # same name and the dimension you would use to tell them apart silently
+            # becomes a constant.
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+
+            # OCID of a custom log in OCI Logging (Console: Logging > Log groups >
+            # your log > OCID) — "ocid1.log.oc1.<region-key>.<...>". Nothing
+            # validates it: a wrong OCID fails silently at flush time and only
+            # shows up in GET /telemetry's counters, which is why this is empty
+            # rather than a placeholder. Fill it in to turn OCI Logging on.
+            - name: OCI_LOG_ID
+              value: ""
+            # Metric namespace. Lowercase [a-z][a-z0-9_]* only, and it must not
+            # start with "oci_"/"oracle_" — the SDK rejects those at startup.
+            # "swift-oke" would be rejected too (hyphens are not allowed).
+            - name: OCI_METRICS_NAMESPACE
+              value: "swift_oke"
+            # Compartment the metric data is posted into — "ocid1.compartment.oc1..<...>".
+            # Required together with OCI_METRICS_NAMESPACE; either one alone
+            # leaves metrics off, which is the state this empty default selects.
+            - name: OCI_COMPARTMENT_ID
+              value: ""
+          # The telemetry bootstrap (one proxymux token exchange) runs before the
+          # listener binds, so give startup its own probe: until it succeeds the
+          # liveness probe does not run at all, and the kubelet cannot restart a
+          # container that is merely still starting. 12 x 5s = 60s, comfortably
+          # more than the app's own 10s bootstrap deadline plus image start-up.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 12
           readinessProbe:
             httpGet:
               path: /health
